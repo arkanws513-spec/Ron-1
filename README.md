@@ -1,32 +1,29 @@
 # Ron-1
 
-Ron-1 is an independent conversational assistant built on the Qwen3-1.7B language model as its underlying intelligence layer.
+ذكاء اصطناعي للمستقبل.
 
-## الهدف
-
-Ron-1 is designed to hold normal conversations and help with research, writing, analysis, and user-provided documents.
-
-Example:
-
-- User: مرحبًا
-- Ron-1: أهلًا بك، كيف يمكنني مساعدتك؟
-- User: عندي مقالة عن حرب البسوس وأريد إكمالتها.
-- Ron-1: أرسل المقالة، وسأفهم ما كتبته ثم أساعدك في إكمالها والحفاظ على سياقها وأسلوبها.
-
-## Architecture
-
-Qwen3-1.7B provides the base language model. Ron Core sits above it and manages conversation context, persistent memory, task handling, writing workflow, and future tools.
-
-The upstream model is loaded from Hugging Face at runtime; model weights are not stored in this Git repository.
+Ron-1 uses Qwen3-1.7B as its base language model and adds a custom Ron Core for conversation, memory, reasoning, and task orchestration.
 
 ## Model
 
-Default model: Qwen/Qwen3-1.7B
+The official Qwen3-1.7B model files are stored in the Ron-1 GitHub Release qwen3-1.7b-weights-v1.
 
-Upstream model: https://huggingface.co/Qwen/Qwen3-1.7B
+The largest safetensors file is stored as two release assets and reconstructed before loading. Ron-1 downloads these assets into its local model directory on first startup, then loads the reconstructed model with local_files_only=True.
 
-License: Apache-2.0
+This means Ron's inference path is local model execution, not a hosted inference API.
 
-## Status
+## Run
 
-Initial Ron Core implementation. The first goal is a working chat loop before adding more advanced memory, tools, retrieval, and learning components.
+Install dependencies:
+
+    pip install -r requirements.txt
+
+Prepare the local model:
+
+    python -m model.download_model
+
+Start the API:
+
+    uvicorn api.server:app --host 0.0.0.0 --port 8000
+
+Qwen3-1.7B is distributed by Qwen under Apache-2.0. Ron-1 is independent and is not an official Qwen or Alibaba product.
