@@ -3,7 +3,7 @@ import torch
 
 
 class QwenBackend:
-    """Runs the Qwen3 weights that have been copied into Ron-1's model directory."""
+    """Loads the Ron-1 local Qwen3-1.7B model weights."""
 
     def __init__(self, model_id: str):
         self.model_id = model_id
