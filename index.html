@@ -16,14 +16,31 @@ form{display:flex;gap:8px}input{flex:1;padding:14px;border:0;border-radius:14px;
 <body>
 <main>
 <h1>🤖 Ron-1</h1><div class="sub">المساعد المستقل</div>
-<div id="chat"><div class="m r">مرحبًا، أنا Ron-1. الواجهة منشورة على GitHub Pages.</div></div>
-<form><input id="msg" autocomplete="off" placeholder="اكتب رسالتك إلى رون..."><button>إرسال</button></form>
-<div class="note">واجهة Ron-1 — Qwen3-1.7B يحتاج خادم استدلال لتشغيل المحادثة فعليًا.</div>
+<div id="chat"><div class="m r">مرحبًا، أنا Ron-1. جاري الاتصال بعقل Qwen3-1.7B...</div></div>
+<form><input id="msg" autocomplete="off" placeholder="اكتب رسالتك إلى رون..."><button id="send">إرسال</button></form>
+<div class="note" id="status">خادم Ron-1: جاري التشغيل...</div>
 </main>
-<script>
-const chat=document.querySelector('#chat'),input=document.querySelector('#msg');
-document.querySelector('form').onsubmit=e=>{e.preventDefault();const s=input.value.trim();if(!s)return;
-chat.insertAdjacentHTML('beforeend','<div class="m u"></div><div class="m r">تم استلام رسالتك. تشغيل النموذج يحتاج خادم الاستدلال الخاص بـ Ron-1.</div>');
-chat.lastElementChild.previousElementSibling.textContent=s;input.value='';chat.scrollTop=chat.scrollHeight};
+<script type="module">
+import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
+const chat=document.querySelector('#chat'),input=document.querySelector('#msg'),send=document.querySelector('#send'),status=document.querySelector('#status');
+let app=null;
+function add(cls,text){const d=document.createElement('div');d.className='m '+cls;d.textContent=text;chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;}
+async function connect(){
+  status.textContent='الاتصال بخادم Ron-1...';
+  app=await Client.connect('arkanws513/Ron-1-server',{status_callback:s=>{status.textContent='الخادم: '+(s?.status||'جاهز');}});
+  status.textContent='Ron-1 متصل ويعمل بـ Qwen3-1.7B';
+}
+connect().catch(e=>{status.textContent='تعذر الاتصال بالخادم: '+e.message;});
+document.querySelector('form').onsubmit=async e=>{
+  e.preventDefault();const s=input.value.trim();if(!s||!app)return;
+  add('u',s);input.value='';send.disabled=true;status.textContent='رون يفكر...';
+  try{
+    const result=await app.predict('/chat',{message:s});
+    const value=result?.data?.[0] ?? result?.data ?? '';
+    add('r',typeof value==='string'?value:JSON.stringify(value));
+    status.textContent='Ron-1 جاهز';
+  }catch(err){add('r','حدث خطأ في خادم Ron-1: '+err.message);status.textContent='حدث خطأ';}
+  finally{send.disabled=false;input.focus();}
+};
 </script>
 </body></html>
