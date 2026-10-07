@@ -15,7 +15,26 @@ jobs:
       - name: Install Hugging Face Hub
         run: python -m pip install --upgrade huggingface_hub
 
-      - name: Create or update Ron-1 server Space
+      - name: Prepare Hugging Face Space
+        run: |
+          rm -rf hf_space
+          mkdir -p hf_space
+          cp -r app.py requirements.txt core model api hf_space/
+          cat > hf_space/README.md <<'EOF'
+          ---
+          title: Ron-1
+          emoji: R
+          colorFrom: blue
+          colorTo: purple
+          sdk: gradio
+          app_file: app.py
+          pinned: false
+          ---
+          # Ron-1
+          Ron-1 — Qwen3-1.7B local inference server.
+          EOF
+
+      - name: Create or update Ron-1 ZeroGPU Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -37,16 +56,12 @@ jobs:
               )
               print("Created Ron-1-server ZeroGPU Space.")
           except Exception as e:
-              print("Space create:", e)
+              print("Space create/update check:", e)
 
           api.upload_folder(
               repo_id=repo,
               repo_type="space",
-              folder_path=".",
-              ignore_patterns=[
-                  ".git/**", ".github/**", "__pycache__/**", "*.pyc",
-                  "data/**", "models/**", "index.html",
-              ],
+              folder_path="hf_space",
               commit_message="Deploy Ron-1 Qwen3-1.7B inference server",
           )
           print("Ron-1-server application uploaded.")
