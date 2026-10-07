@@ -1,5 +1,6 @@
 name: Deploy Ron-1 server to Hugging Face ZeroGPU
 
+# Trigger deployment on every push to main and manually.
 on:
   push:
     branches: [main]
