@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ron-1</title>
+<style>
+body{margin:0;font-family:system-ui,sans-serif;background:#10131a;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center}
+main{width:min(720px,92%);background:#181d27;border-radius:22px;padding:24px;box-sizing:border-box;box-shadow:0 20px 60px #0008}
+h1{margin:0 0 4px}.sub{color:#aab3c2;margin-bottom:20px}
+#chat{height:48vh;overflow:auto;padding:8px}.m{padding:12px 15px;border-radius:15px;margin:10px 0;white-space:pre-wrap}.r{background:#252c39}.u{background:#303b50}
+form{display:flex;gap:8px}input{flex:1;padding:14px;border:0;border-radius:14px;background:#252c39;color:#fff;font-size:16px}button{border:0;border-radius:14px;padding:0 20px;font-size:16px;cursor:pointer}
+.note{text-align:center;color:#8993a3;font-size:13px;margin-top:12px}
+</style>
+</head>
+<body>
+<main>
+<h1>🤖 Ron-1</h1><div class="sub">المساعد المستقل</div>
+<div id="chat"><div class="m r">مرحبًا، أنا Ron-1. الواجهة منشورة على GitHub Pages.</div></div>
+<form><input id="msg" autocomplete="off" placeholder="اكتب رسالتك إلى رون..."><button>إرسال</button></form>
+<div class="note">واجهة Ron-1 — Qwen3-1.7B يحتاج خادم استدلال لتشغيل المحادثة فعليًا.</div>
+</main>
+<script>
+const chat=document.querySelector('#chat'),input=document.querySelector('#msg');
+document.querySelector('form').onsubmit=e=>{e.preventDefault();const s=input.value.trim();if(!s)return;
+chat.insertAdjacentHTML('beforeend','<div class="m u"></div><div class="m r">تم استلام رسالتك. تشغيل النموذج يحتاج خادم الاستدلال الخاص بـ Ron-1.</div>');
+chat.lastElementChild.previousElementSibling.textContent=s;input.value='';chat.scrollTop=chat.scrollHeight};
+</script>
+</body></html>
