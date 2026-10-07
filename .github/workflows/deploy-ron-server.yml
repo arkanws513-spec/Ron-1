@@ -32,7 +32,7 @@ jobs:
                   repo_type="space",
                   private=False,
                   space_sdk="gradio",
-                  space_hardware="zero-gpu",
+                  space_hardware="zerogpu",
                   exist_ok=False,
               )
               print("Created Ron-1-server ZeroGPU Space.")
@@ -44,13 +44,8 @@ jobs:
               repo_type="space",
               folder_path=".",
               ignore_patterns=[
-                  ".git/**",
-                  ".github/**",
-                  "__pycache__/**",
-                  "*.pyc",
-                  "data/**",
-                  "models/**",
-                  "index.html",
+                  ".git/**", ".github/**", "__pycache__/**", "*.pyc",
+                  "data/**", "models/**", "index.html",
               ],
               commit_message="Deploy Ron-1 Qwen3-1.7B inference server",
           )
