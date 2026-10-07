@@ -1,0 +1,72 @@
+name: Import Qwen3-1.7B weights
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/import-qwen3.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Download official Qwen3-1.7B
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade huggingface_hub
+          mkdir -p model-import
+          python - <<'PY'
+          from huggingface_hub import snapshot_download
+          snapshot_download(
+              repo_id="Qwen/Qwen3-1.7B",
+              local_dir="model-import",
+              local_dir_use_symlinks=False,
+          )
+          PY
+
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd model-import
+          mkdir -p ../release-assets
+          for f in *; do
+            if [ -f "$f" ]; then
+              case "$f" in
+                *.safetensors)
+                  size=$(stat -c%s "$f")
+                  if [ "$size" -gt 1900000000 ]; then
+                    split -b 1800M -d -a 2 "$f" "../release-assets/$f.part-"
+                  else
+                    cp "$f" "../release-assets/"
+                  fi
+                  ;;
+                *)
+                  cp "$f" "../release-assets/"
+                  ;;
+              esac
+            fi
+          done
+          printf '%s\n' "Qwen3-1.7B weights imported from Qwen/Qwen3-1.7B." > ../release-assets/SOURCE.txt
+          printf '%s\n' "For split safetensors, concatenate parts in lexical order to reconstruct the original file." > ../release-assets/REASSEMBLY.txt
+          ls -lh ../release-assets
+
+      - name: Create release and upload assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="qwen3-1.7b-weights-v1"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release delete "$tag" --yes --cleanup-tag
+          fi
+          gh release create "$tag" release-assets/* \
+            --title "Ron-1 Qwen3-1.7B Weights v1" \
+            --notes "Official Qwen/Qwen3-1.7B model files imported for use as the Ron-1 core. Large safetensors files are split into 1.8GB parts because of per-file limits."
