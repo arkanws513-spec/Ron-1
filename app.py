@@ -1,8 +1,11 @@
 import gradio as gr
+import spaces
+
 from core.ron import Ron
 
 ron = Ron()
 
+@spaces.GPU(duration=120)
 def respond(message, history):
     if not message or not message.strip():
         return ""
