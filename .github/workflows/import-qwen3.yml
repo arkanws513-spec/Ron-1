@@ -70,3 +70,5 @@ jobs:
           gh release create "$tag" release-assets/* \
             --title "Ron-1 Qwen3-1.7B Weights v1" \
             --notes "Official Qwen/Qwen3-1.7B model files imported for use as the Ron-1 core. Large safetensors files are split into 1.8GB parts because of per-file limits."
+
+# Triggered by Ron-1 automation to import the official weights.
