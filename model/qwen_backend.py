@@ -1,6 +1,8 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
+from model.prepare_model import ensure_local_model
+
 
 class QwenBackend:
     """Loads the Ron-1 local Qwen3-1.7B model weights."""
@@ -14,12 +16,13 @@ class QwenBackend:
         if self.model is not None:
             return
 
+        local_path = ensure_local_model()
         self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_id,
+            local_path,
             local_files_only=True,
         )
         self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_id,
+            local_path,
             torch_dtype="auto",
             device_map="auto",
             local_files_only=True,
