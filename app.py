@@ -5,7 +5,7 @@ from core.ron import Ron
 
 ron = Ron()
 
-@spaces.GPU(duration=120)
+@spaces.GPU(duration=60)
 def respond(message, history):
     if not message or not message.strip():
         return ""
@@ -13,6 +13,7 @@ def respond(message, history):
 
 demo = gr.ChatInterface(
     fn=respond,
+    api_name="chat",
     title="Ron-1",
     description="المساعد المستقل — يعمل بعقل Qwen3-1.7B محليًا.",
     textbox=gr.Textbox(placeholder="اكتب رسالتك إلى رون...", container=True),
