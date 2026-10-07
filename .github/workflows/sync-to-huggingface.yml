@@ -1,4 +1,4 @@
-name: Deploy Ron-1 to Hugging Face Space
+name: Deploy Ron-1 to Hugging Face ZeroGPU
 
 on:
   push:
@@ -12,20 +12,36 @@ jobs:
       - name: Checkout Ron-1
         uses: actions/checkout@v4
 
-      - name: Install Hugging Face Hub
-        run: python -m pip install --upgrade huggingface_hub
-
-      - name: Deploy files to existing Space
+      - name: Configure Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          python -m pip install --upgrade huggingface_hub
           python - <<'PY'
           import os
           from huggingface_hub import HfApi
 
           api = HfApi(token=os.environ["HF_TOKEN"])
+          repo = "arkanws513/Ron-1"
+
+          try:
+              api.delete_repo(repo_id=repo, repo_type="space")
+              print("Removed old static Space.")
+          except Exception as e:
+              print("Old Space removal:", e)
+
+          api.create_repo(
+              repo_id=repo,
+              repo_type="space",
+              private=False,
+              space_sdk="gradio",
+              space_hardware="zero-gpu",
+              exist_ok=False,
+          )
+          print("Created Ron-1 as a public Gradio ZeroGPU Space.")
+
           api.upload_folder(
-              repo_id="arkanws513/Ron-1",
+              repo_id=repo,
               repo_type="space",
               folder_path=".",
               ignore_patterns=[
@@ -35,8 +51,9 @@ jobs:
                   "*.pyc",
                   "data/**",
                   "models/**",
+                  "index.html",
               ],
-              commit_message="Deploy Ron-1 Gradio app",
+              commit_message="Deploy Ron-1 Qwen3-1.7B ZeroGPU app",
           )
-          print("Ron-1 deployed to Hugging Face Space.")
+          print("Uploaded Ron-1 application.")
           PY
