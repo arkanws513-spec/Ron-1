@@ -1,20 +1,20 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
-
-from model.prepare_model import ensure_local_model
-
-
 class QwenBackend:
-    """Loads the Ron-1 local Qwen3-1.7B model weights."""
+    """Loads Ron-1's local Qwen3-1.7B model only when inference is requested."""
 
     def __init__(self, model_id: str):
         self.model_id = model_id
         self.tokenizer = None
         self.model = None
+        self._torch = None
 
     def load(self) -> None:
         if self.model is not None:
             return
+
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        from model.prepare_model import ensure_local_model
 
         local_path = ensure_local_model()
         self.tokenizer = AutoTokenizer.from_pretrained(
@@ -27,6 +27,7 @@ class QwenBackend:
             device_map="auto",
             local_files_only=True,
         )
+        self._torch = torch
 
     def generate(
         self,
@@ -45,7 +46,7 @@ class QwenBackend:
             return_tensors="pt",
         ).to(self.model.device)
 
-        with torch.no_grad():
+        with self._torch.no_grad():
             outputs = self.model.generate(
                 **inputs,
                 max_new_tokens=max_new_tokens,
