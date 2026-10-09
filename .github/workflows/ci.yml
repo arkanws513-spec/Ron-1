@@ -24,3 +24,11 @@ jobs:
         run: python -m compileall -q api core model
       - name: Run tests
         run: python -m pytest -q
+
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build production Docker image
+        run: docker build --pull -t ron-1-ci .
