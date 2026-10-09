@@ -3,6 +3,7 @@ import json
 import os
 import urllib.request
 from pathlib import Path
+from urllib.parse import urlparse
 
 from core.config import settings
 
@@ -24,6 +25,39 @@ SMALL_ASSETS = (
     "tokenizer_config.json",
     "vocab.json",
 )
+
+
+class _StripCrossHostAuthorization(urllib.request.HTTPRedirectHandler):
+    """Never forward the GitHub token to the signed release-asset CDN."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if redirected and urlparse(req.full_url).hostname != urlparse(newurl).hostname:
+            for header in ("Authorization", "authorization", "Proxy-Authorization"):
+                redirected.remove_header(header)
+                redirected.remove_unredirected_header(header)
+        return redirected
+
+
+def _github_token() -> str:
+    return os.getenv("GITHUB_TOKEN", "").strip()
+
+
+def _github_headers(accept: str = "application/vnd.github+json") -> dict[str, str]:
+    headers = {"Accept": accept, "User-Agent": "Ron-1/1.0"}
+    token = _github_token()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
+def _open_url(request: urllib.request.Request, timeout: int):
+    # Keep urlopen as the simple public path (and test seam). When a token is
+    # present, use a redirect handler that strips credentials on host changes.
+    if not _github_token():
+        return urllib.request.urlopen(request, timeout=timeout)
+    opener = urllib.request.build_opener(_StripCrossHostAuthorization())
+    return opener.open(request, timeout=timeout)
 
 
 def _sha256(path: Path) -> str:
@@ -48,14 +82,25 @@ def _download(asset: dict, target: Path) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_name(target.name + ".download")
     temporary.unlink(missing_ok=True)
+    # Private release assets require the authenticated GitHub API asset URL.
+    # The API redirects to a signed CDN URL; authorization is stripped when
+    # the redirect crosses hosts.
+    download_url = asset.get("url") or asset.get("browser_download_url")
+    if not download_url:
+        raise RuntimeError(f"Ron-1 release asset has no download URL: {target.name}")
+    if _github_token() and urlparse(download_url).hostname == "github.com":
+        raise RuntimeError(
+            "Authenticated model downloads must use the GitHub API asset URL; "
+            "the release metadata did not include one."
+        )
     request = urllib.request.Request(
-        asset["browser_download_url"],
-        headers={"User-Agent": "Ron-1/1.0"},
+        download_url,
+        headers=_github_headers("application/octet-stream"),
     )
     digest = hashlib.sha256()
     size = 0
     try:
-        with urllib.request.urlopen(request, timeout=120) as response:
+        with _open_url(request, timeout=120) as response:
             with temporary.open("wb") as output:
                 while True:
                     chunk = response.read(CHUNK_SIZE)
@@ -77,8 +122,13 @@ def _download(asset: dict, target: Path) -> None:
             if digest.hexdigest() != expected.partition(":")[2]:
                 raise RuntimeError(f"Ron-1 asset checksum mismatch for {target.name}")
         os.replace(temporary, target)
-    except Exception:
+    except Exception as error:
         temporary.unlink(missing_ok=True)
+        if getattr(error, "code", None) == 404 and not _github_token():
+            raise RuntimeError(
+                "Ron-1 model release was not accessible. If the repository is private, "
+                "configure GITHUB_TOKEN with read access to repository contents and release assets."
+            ) from error
         raise
 
 
@@ -105,15 +155,17 @@ def ensure_local_model() -> str:
     ):
         return str(model_dir)
 
-    request = urllib.request.Request(
-        RELEASE_API,
-        headers={
-            "Accept": "application/vnd.github+json",
-            "User-Agent": "Ron-1/1.0",
-        },
-    )
-    with urllib.request.urlopen(request, timeout=30) as response:
-        release = json.load(response)
+    request = urllib.request.Request(RELEASE_API, headers=_github_headers())
+    try:
+        with _open_url(request, timeout=30) as response:
+            release = json.load(response)
+    except Exception as error:
+        if getattr(error, "code", None) == 404 and not _github_token():
+            raise RuntimeError(
+                "Ron-1 model release was not accessible. If the repository is private, "
+                "configure GITHUB_TOKEN with read access to repository contents and release assets."
+            ) from error
+        raise
 
     assets = {asset["name"]: asset for asset in release.get("assets", [])}
 
@@ -130,7 +182,7 @@ def ensure_local_model() -> str:
         first.unlink(missing_ok=True)
         for part_name in PARTS:
             part_path = model_dir / part_name
-            asset = _ensure_asset(assets, part_name, part_path)
+            _ensure_asset(assets, part_name, part_path)
             with part_path.open("rb") as source, first.open("ab") as output:
                 while True:
                     chunk = source.read(CHUNK_SIZE)
@@ -145,11 +197,7 @@ def ensure_local_model() -> str:
             first.unlink(missing_ok=True)
             raise RuntimeError("Ron-1 first weight shard reassembly failed")
 
-    _ensure_asset(
-        assets,
-        second.name,
-        second,
-    )
+    _ensure_asset(assets, second.name, model_dir / second.name)
 
     # The marker is written last; a failed or interrupted download is retried
     # safely on the next start instead of being mistaken for a ready model.
