@@ -1,15 +1,15 @@
 import gradio as gr
-import spaces
 
 from core.ron import Ron
 
 ron = Ron()
 
-@spaces.GPU(duration=60)
+
 def respond(message, history):
     if not message or not message.strip():
         return ""
     return ron.chat(message.strip())
+
 
 demo = gr.ChatInterface(
     fn=respond,
