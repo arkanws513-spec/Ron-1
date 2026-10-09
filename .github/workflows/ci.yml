@@ -32,3 +32,14 @@ jobs:
         uses: actions/checkout@v4
       - name: Build production Docker image
         run: docker build --pull -t ron-1-ci .
+      - name: Smoke-test container health and auth
+        run: |
+          docker run -d --name ron-1-smoke -e RON_API_KEY=ci-smoke-key -p 127.0.0.1:8000:8000 ron-1-ci
+          trap 'docker rm -f ron-1-smoke >/dev/null 2>&1 || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:8000/health >/dev/null; then break; fi
+            sleep 2
+          done
+          curl --silent --show-error --fail http://127.0.0.1:8000/health
+          code=$(curl --silent --output /tmp/ron-chat.json --write-out '%{http_code}' -X POST http://127.0.0.1:8000/chat -H 'Content-Type: application/json' -H 'X-Ron-API-Key: wrong-key' -d '{"message":"hello","user_id":"ci-user"}')
+          test "$code" = 401
