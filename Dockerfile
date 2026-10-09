@@ -9,9 +9,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN useradd --create-home --uid 10001 ron \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gosu \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 10001 ron \
     && mkdir -p /data \
-    && chown -R ron:ron /data
+    && chown ron:ron /data
 
 COPY requirements-api.txt .
 RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu "torch>=2.8.0" \
@@ -27,5 +30,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=180s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:' + __import__('os').getenv('PORT', '8000') + '/health', timeout=3).read()"
 
-USER ron
-CMD ["sh", "-c", "uvicorn api.server:app --host 0.0.0.0 --port ${PORT} --workers 1"]
+ENTRYPOINT ["sh", "-c", "mkdir -p /data && chown ron:ron /data && exec gosu ron uvicorn api.server:app --host 0.0.0.0 --port \"$PORT\" --workers 1"]
