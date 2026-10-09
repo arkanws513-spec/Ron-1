@@ -1,7 +1,16 @@
 name: Deploy Ron-1 server to Hugging Face Space
 
-# Optional external deployment: run manually only. Ron Cloud deployment is separate.
+# Deploy the existing Space when the server files or workflow are updated.
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deploy-ron-server.yml"
+      - "app.py"
+      - "requirements.txt"
+      - "core/**"
+      - "model/**"
+      - "api/**"
   workflow_dispatch:
 
 jobs:
