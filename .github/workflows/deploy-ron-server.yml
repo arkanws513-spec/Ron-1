@@ -1,11 +1,10 @@
 name: Deploy Ron-1 server to Hugging Face ZeroGPU
 
-# Trigger deployment on every push to main and manually.
+# This workflow deploys to Hugging Face only; PRs must never trigger a deployment.
 on:
   push:
     branches: [main]
   workflow_dispatch:
-  pull_request:
 
 jobs:
   deploy:
@@ -44,7 +43,11 @@ jobs:
           import os
           from huggingface_hub import HfApi
 
-          api = HfApi(token=os.environ["HF_TOKEN"])
+          token = os.environ.get("HF_TOKEN")
+          if not token:
+              raise SystemExit("HF_TOKEN secret is required for this optional Hugging Face deployment.")
+
+          api = HfApi(token=token)
           repo = "arkanws513/Ron-1-server"
 
           try:
@@ -54,11 +57,10 @@ jobs:
                   private=False,
                   space_sdk="gradio",
                   space_hardware="zerogpu",
-                  exist_ok=False,
+                  exist_ok=True,
               )
-              print("Created Ron-1-server ZeroGPU Space.")
-          except Exception as e:
-              print("Space create/update check:", e)
+          except Exception as exc:
+              raise SystemExit(f"Could not create or access Hugging Face Space: {exc}") from exc
 
           api.upload_folder(
               repo_id=repo,
@@ -66,5 +68,5 @@ jobs:
               folder_path="hf_space",
               commit_message="Deploy Ron-1 Qwen3-1.7B inference server",
           )
-          print("Ron-1-server application uploaded.")
+          print("Ron-1 Hugging Face Space updated.")
           PY
