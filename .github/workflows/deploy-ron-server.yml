@@ -1,4 +1,4 @@
-name: Deploy Ron-1 server to Hugging Face ZeroGPU
+name: Deploy Ron-1 server to Hugging Face Space
 
 # Optional external deployment: run manually only. Ron Cloud deployment is separate.
 on:
@@ -20,7 +20,7 @@ jobs:
           cat > hf_space/README.md <<'EOF'
           ---
           title: Ron-1
-          emoji: R
+          emoji: 🤖
           colorFrom: blue
           colorTo: purple
           sdk: gradio
@@ -30,7 +30,7 @@ jobs:
           # Ron-1
           Ron-1 — Qwen3-1.7B local inference server.
           EOF
-      - name: Create or update Ron-1 ZeroGPU Space
+      - name: Upload Ron-1 to the existing Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -43,9 +43,11 @@ jobs:
               raise SystemExit("HF_TOKEN secret is required for this optional Hugging Face deployment.")
           api = HfApi(token=token)
           repo = "arkanws513/Ron-1-server"
-          api.create_repo(repo_id=repo, repo_type="space", private=False,
-                          space_sdk="gradio", space_hardware="zerogpu", exist_ok=True)
-          api.upload_folder(repo_id=repo, repo_type="space", folder_path="hf_space",
-                            commit_message="Deploy Ron-1 Qwen3-1.7B inference server")
-          print("Ron-1 Hugging Face Space updated.")
+          api.upload_folder(
+              repo_id=repo,
+              repo_type="space",
+              folder_path="hf_space",
+              commit_message="Deploy Ron-1 to existing Gradio Space",
+          )
+          print("Ron-1 files uploaded to the existing Hugging Face Space.")
           PY
