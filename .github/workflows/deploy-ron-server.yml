@@ -1,69 +1,38 @@
-name: Keep only Ron-1 on Hugging Face
+name: Deploy Ron-1 to Hugging Face Space
 
+# Run only when explicitly requested. The free Space currently reports an
+# account CPU quota error, so automatic restarts on every push cannot fix it.
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/deploy-ron-server.yml"
-      - "app.py"
-      - "requirements.txt"
-      - "core/**"
-      - "model/**"
-      - "api/**"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  cleanup-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ron-1
         uses: actions/checkout@v4
+
       - name: Install Hugging Face Hub
         run: python -m pip install --upgrade huggingface_hub
-      - name: Delete Hugging Face repositories except Ron-1
+
+      - name: Verify deployment credential
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          python - <<'PY'
-          import os
-          from huggingface_hub import HfApi
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::error::Add HF_TOKEN in repository Actions secrets before deploying."
+            exit 1
+          fi
 
-          token = os.environ.get("HF_TOKEN")
-          if not token:
-              raise SystemExit("HF_TOKEN secret is required; no repositories were deleted.")
-          api = HfApi(token=token)
-          owner = "arkanws513"
-          keep = {"arkanws513/Ron-1-server"}
-
-          repos = []
-          for repo_type, listing in (
-              ("space", api.list_spaces(author=owner)),
-              ("model", api.list_models(author=owner)),
-              ("dataset", api.list_datasets(author=owner)),
-          ):
-              for item in listing:
-                  repo_id = getattr(item, "id", None)
-                  if repo_id and repo_id not in keep:
-                      repos.append((repo_type, repo_id))
-
-          print(f"Found {len(repos)} Hugging Face repositories to remove.")
-          failures = []
-          for repo_type, repo_id in repos:
-              try:
-                  api.delete_repo(repo_id=repo_id, repo_type=repo_type)
-                  print(f"DELETED {repo_type}: {repo_id}")
-              except Exception as exc:
-                  failures.append((repo_type, repo_id, str(exc)))
-                  print(f"FAILED {repo_type}: {repo_id}: {type(exc).__name__}: {exc}")
-
-          if failures:
-              raise SystemExit(f"{len(failures)} repository deletions failed; see log above.")
-          PY
       - name: Prepare Ron-1 Space files
         run: |
           rm -rf hf_space
           mkdir -p hf_space
-          cp -r app.py requirements.txt core model api hf_space/
+          cp app.py requirements.txt hf_space/
+          cp -r core model hf_space/
           cat > hf_space/README.md <<'EOF'
           ---
           title: Ron-1
@@ -71,28 +40,31 @@ jobs:
           colorFrom: blue
           colorTo: purple
           sdk: gradio
+          sdk_version: 5.49.1
+          python_version: "3.10"
           app_file: app.py
-          pinned: false
+          startup_duration_timeout: 1h
           ---
           # Ron-1
-          Ron-1 — Qwen3-1.7B local inference server.
+          Ron-1 — Qwen3-1.7B local inference assistant.
           EOF
-      - name: Deploy Ron-1 to its existing Space
+
+      - name: Upload only Ron-1 files to the existing Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           python - <<'PY'
           import os
           from huggingface_hub import HfApi
+
           api = HfApi(token=os.environ["HF_TOKEN"])
           repo = "arkanws513/Ron-1-server"
           api.upload_folder(
               repo_id=repo,
               repo_type="space",
               folder_path="hf_space",
-              commit_message="Deploy Ron-1 and preserve its Space",
+              commit_message="Deploy Ron-1 files",
           )
           print(f"Uploaded Ron-1 files to {repo}.")
-          api.restart_space(repo_id=repo)
-          print(f"Requested restart for {repo}.")
+          print("Hugging Face may still refuse to start the Space if the account CPU quota is exhausted.")
           PY
