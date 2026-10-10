@@ -4,26 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#10131a">
-<title>Ron-1 | المساعد المستقل</title>
+<title>Ron-1 | عقل محلي</title>
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#10131a;color:#f5f7fb;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}main{width:min(760px,100%);background:#181d27;border:1px solid #30394a;border-radius:22px;padding:clamp(16px,4vw,28px);box-shadow:0 20px 60px #0008}h1{margin:0;font-size:clamp(24px,5vw,32px)}.sub{color:#aab3c2;margin:4px 0 18px}#chat{height:min(56vh,560px);min-height:260px;overflow:auto;padding:8px 2px}.m{padding:12px 15px;border-radius:15px;margin:10px 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}.r{background:#252c39}.u{background:#303b50}form{display:flex;gap:8px}input{min-width:0;flex:1;padding:14px;border:1px solid #3b4558;border-radius:14px;background:#252c39;color:#fff;font-size:16px}button{border:0;border-radius:14px;padding:0 20px;background:#b9d3ff;color:#10131a;font-weight:700;font-size:16px;cursor:pointer}button:disabled{opacity:.55;cursor:wait}.note{text-align:center;color:#aab3c2;font-size:13px;margin-top:12px}.tag{display:inline-block;border:1px solid #39465a;border-radius:999px;padding:3px 9px;font-size:12px;color:#cbd5e1;margin-bottom:12px}
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#10131a;color:#f5f7fb;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}main{width:min(760px,100%);background:#181d27;border:1px solid #30394a;border-radius:22px;padding:clamp(16px,4vw,28px);box-shadow:0 20px 60px #0008}h1{margin:0;font-size:clamp(24px,5vw,32px)}.sub{color:#aab3c2;margin:4px 0 14px}.tag{display:inline-block;border:1px solid #39465a;border-radius:999px;padding:4px 10px;font-size:12px;color:#cbd5e1;margin-bottom:12px}#chat{height:min(52vh,520px);min-height:240px;overflow:auto;padding:8px 2px}.m{padding:12px 15px;border-radius:15px;margin:10px 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8}.r{background:#252c39}.u{background:#303b50}form{display:flex;gap:8px;margin-top:12px}input{min-width:0;flex:1;padding:14px;border:1px solid #3b4558;border-radius:14px;background:#252c39;color:#fff;font-size:16px}button{border:0;border-radius:14px;padding:12px 17px;background:#b9d3ff;color:#10131a;font-weight:700;font-size:15px;cursor:pointer}button:disabled{opacity:.55;cursor:wait}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions button.secondary{background:#303b50;color:#f5f7fb;border:1px solid #46536a}.note{text-align:center;color:#aab3c2;font-size:13px;margin-top:12px;line-height:1.7}#status{color:#cbd5e1}.warn{color:#ffd38a!important}a{color:#b9d3ff}
 </style>
 </head>
 <body>
 <main>
-<h1>🤖 Ron-1</h1><div class="sub">المساعد المستقل</div>
-<div class="tag">نموذج مفتوح المصدر عبر خدمة استدلال</div>
-<div id="chat" aria-live="polite"><div class="m r">أهلًا بك! أنا رون. أتحقق من الاتصال بخادم المحادثة…</div></div>
-<form id="form"><input id="msg" autocomplete="off" maxlength="8000" placeholder="اكتب رسالتك إلى رون…" aria-label="رسالتك"><button id="send" type="submit">إرسال</button></form>
-<div class="note" id="status">جارٍ الاتصال…</div>
+<h1>🤖 Ron-1</h1>
+<div class="sub">المساعد المستقل — تجربة عقل لغوي محلي</div>
+<div class="tag">Qwen3-0.6B · يعمل داخل المتصفح بعد تحميله</div>
+<div id="chat" aria-live="polite"><div class="m r">أهلًا بك. اضغط «تحميل العقل» أولًا. النموذج يُحمّل من مستودع مفتوح إلى جهازك، وقد يستغرق التحميل الأول وقتًا ومساحة بيانات.</div></div>
+<div class="actions">
+  <button id="load" type="button">تحميل العقل</button>
+  <button id="clear" class="secondary" type="button">محادثة جديدة</button>
+</div>
+<form id="form"><input id="msg" autocomplete="off" maxlength="4000" placeholder="اكتب رسالتك إلى رون…" aria-label="رسالتك"><button id="send" type="submit" disabled>إرسال</button></form>
+<div class="note" id="status">النموذج لم يُحمّل بعد. بعد التحميل، تُولَّد الردود على جهازك ولا تُرسل المحادثة إلى خادم استدلال.</div>
+<div class="note">النموذج الأساسي مفتوح الأوزان: <a href="https://huggingface.co/onnx-community/Qwen3-0.6B-ONNX" target="_blank" rel="noreferrer">Qwen3-0.6B-ONNX</a>. جودة الإجابات وسرعتها تعتمد على جهازك ومتصفحك.</div>
 </main>
 <script>
-const API_BASE = "https://ron-1-chat-api.vercel.app";
-const chat=document.querySelector('#chat'),input=document.querySelector('#msg'),send=document.querySelector('#send'),status=document.querySelector('#status'),form=document.querySelector('#form');
+const chat=document.querySelector('#chat'),input=document.querySelector('#msg'),send=document.querySelector('#send'),status=document.querySelector('#status'),form=document.querySelector('#form'),loadButton=document.querySelector('#load'),clearButton=document.querySelector('#clear');
+const SYSTEM_PROMPT='أنت رون، مساعد عربي مستقل. أجب بوضوح وبأسلوب طبيعي ومفيد، وفضّل العربية المصرية عند مخاطبة المستخدم باللهجة المصرية. لا تدّع امتلاك معلومات لا تعرفها. لا تعرض التفكير الداخلي؛ أعطِ النتيجة والتفسير المختصر فقط.';
+let worker=null,ready=false,busy=false,history=[{role:'system',content:SYSTEM_PROMPT}];
 function add(cls,text){const d=document.createElement('div');d.className='m '+cls;d.textContent=text;chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;}
-async function checkHealth(){if(!API_BASE){status.textContent='واجهة رون جاهزة؛ خادم المحادثة لم يُنشر بعد';return;}try{const r=await fetch(API_BASE+'/health');if(!r.ok)throw new Error();const h=await r.json();status.textContent=h.local_fallback?'الخادم متصل؛ الردود الأساسية تعمل، والنموذج المتقدم قد يحتاج إعدادًا':(h.provider_configured?'رون متصل بخدمة النموذج':'الخادم يعمل، وبانتظار إعداد مزود النموذج');}catch(e){status.textContent='خادم المحادثة غير متاح حاليًا';}}
-checkHealth();
-form.addEventListener('submit',async e=>{e.preventDefault();const message=input.value.trim();if(!message)return;add('u',message);input.value='';send.disabled=true;status.textContent='رون يفكر…';try{if(!API_BASE)throw new Error('تعذر الاتصال بخادم Ron-1. افتح حالة الخادم أو حاول مرة أخرى لاحقًا.');const r=await fetch(API_BASE+'/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,conversation_id:'web-default'})});const data=await r.json();if(!r.ok)throw new Error(data.detail||'تعذر الحصول على رد');add('r',data.response||'وصل رد فارغ من النموذج.');status.textContent='Ron-1 جاهز';}catch(err){add('r','تعذر الحصول على رد الآن: '+err.message);status.textContent='تحقق من اتصال الخادم وإعداد مزود النموذج';}finally{send.disabled=false;input.focus();}});
+function setStatus(text,warn=false){status.textContent=text;status.classList.toggle('warn',warn);}
+function startWorker(){if(worker)return;worker=new Worker('./ron-model-worker.js',{type:'module'});worker.onmessage=(event)=>{const data=event.data||{};if(data.type==='status'){setStatus(data.text);loadButton.disabled=true;}else if(data.type==='progress'){const info=data.info||{};if(info.status==='progress'&&Number.isFinite(info.progress)){setStatus('تحميل ملفات النموذج: '+Math.round(info.progress)+'%');}else if(info.status==='initiate'){setStatus('بدء تحميل: '+(info.file||'ملفات النموذج'));}}else if(data.type==='ready'){ready=true;loadButton.disabled=true;send.disabled=false;setStatus('العقل جاهز داخل المتصفح. يمكنك بدء المحادثة.');add('r','تم تحميل العقل اللغوي بنجاح. أنا جاهز للمحادثة.');}else if(data.type==='answer'){busy=false;send.disabled=!ready;loadButton.disabled=ready;const answer=data.text||'لم يصل رد واضح.';history.push({role:'assistant',content:answer});add('r',answer);setStatus('رون جاهز');}else if(data.type==='error'){busy=false;send.disabled=!ready;loadButton.disabled=false;setStatus(data.text||'حدث خطأ أثناء تشغيل النموذج.',true);add('r',data.text||'حدث خطأ أثناء تشغيل النموذج.');}};worker.onerror=(e)=>{busy=false;send.disabled=!ready;loadButton.disabled=false;setStatus('تعذر تشغيل مكوّن النموذج: '+(e.message||'خطأ غير معروف'),true);};}
+loadButton.addEventListener('click',()=>{startWorker();loadButton.disabled=true;setStatus('بدء تجهيز العقل اللغوي…');worker.postMessage({type:'load'});});
+clearButton.addEventListener('click',()=>{history=[{role:'system',content:SYSTEM_PROMPT}];chat.innerHTML='';add('r',ready?'بدأنا محادثة جديدة. أنا رون، كيف أقدر أساعدك؟':'محادثة جديدة. حمّل العقل أولًا.');});
+form.addEventListener('submit',(e)=>{e.preventDefault();const message=input.value.trim();if(!message||!ready||busy)return;input.value='';add('u',message);history.push({role:'user',content:message});const recent=[history[0],...history.slice(1).slice(-8)];busy=true;send.disabled=true;setStatus('رون يفكر…');worker.postMessage({type:'generate',messages:recent});});
 </script>
 </body>
 </html>
