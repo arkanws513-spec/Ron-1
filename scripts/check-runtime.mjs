@@ -46,5 +46,7 @@ assert.ok(html.includes("navigator.serviceWorker.register"));
 assert.match(html, /generation_reset/);
 assert.ok(serviceWorker.includes("caches.open"));
 assert.ok(serviceWorker.includes("cache.put"));
+assert.match(serviceWorker, /if \(isAppShell\)/);
+assert.match(serviceWorker, /const cached = await cache\.match\(request\)/);
 assert.ok(pages.includes("cp index.html ron-model-worker.js sw.js site/"));
 console.log("Ron-1 runtime contract and model asset checks passed.");
