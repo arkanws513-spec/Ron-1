@@ -13,15 +13,15 @@
 <main>
 <h1>🤖 Ron-1</h1>
 <div class="sub">المساعد المستقل — تجربة عقل لغوي محلي</div>
-<div class="tag">SmolLM2-135M-Instruct · نسخة صغيرة للأجهزة المحدودة</div>
+<div class="tag">SmolLM2-135M-Instruct · نواة Q4 محلية للأجهزة المحدودة</div>
 <div id="chat" aria-live="polite"><div class="m r">أهلًا بك في رون. يجري تجهيز العقل اللغوي تلقائيًا؛ يمكنك بدء الكتابة بينما يكتمل التحميل الأول.</div></div>
 <div class="actions">
   <button id="load" type="button" hidden>إعادة تشغيل النواة</button>
   <button id="clear" class="secondary" type="button">محادثة جديدة</button>
 </div>
 <form id="form"><input id="msg" autocomplete="off" maxlength="4000" placeholder="اكتب رسالتك إلى رون…" aria-label="رسالتك"><button id="send" type="submit" disabled>إرسال</button></form>
-<div class="note" id="status">يجري تشغيل نواة رون تلقائيًا. أول مرة قد تحتاج تنزيل نحو 117 ميجابايت؛ بعدها يحاول المتصفح استخدام الملفات المحفوظة. الاستدلال محلي على جهازك.</div>
-<div class="note">الأوزان وملفات التشغيل تُنشر ضمن ملفات موقع Ron-1 نفسه. لا يستخدم المتصفح Hugging Face أو GitHub Releases أو خادم استدلال خارجي أثناء المحادثة. أول تشغيل يحتاج اتصالًا لتنزيل الملفات من نفس الموقع، ثم قد تُعاد الاستفادة من النسخة المخزنة.</div>
+<div class="note" id="status">يجري تشغيل نواة رون تلقائيًا. أول مرة تحتاج تنزيل أوزان النموذج المضمّنة في حزمة Ron-1؛ بعدها يحاول المتصفح استخدام الملفات المحفوظة. الاستدلال محلي على جهازك.</div>
+<div class="note">أوزان Q4 وملفات التشغيل جزء من حزمة نشر Ron-1 نفسها، ويشغّلها المتصفح محليًا دون خادم استدلال خارجي. لا يستخدم المتصفح Hugging Face أو GitHub Releases أو خادم استدلال خارجي أثناء المحادثة. أول تشغيل يحتاج اتصالًا لتنزيل الملفات من نفس الموقع، ثم قد تُعاد الاستفادة من النسخة المخزنة.</div>
 </main>
 <script>
 const chat=document.querySelector('#chat'),input=document.querySelector('#msg'),send=document.querySelector('#send'),status=document.querySelector('#status'),form=document.querySelector('#form'),loadButton=document.querySelector('#load'),clearButton=document.querySelector('#clear');
