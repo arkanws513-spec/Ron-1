@@ -15,23 +15,37 @@ self.onmessage = async (event) => {
     loading = true;
     try {
       const hasWebGPU = typeof navigator !== "undefined" && !!navigator.gpu;
-      const device = hasWebGPU ? "webgpu" : "wasm";
-      const dtype = hasWebGPU ? "q4f16" : "q4";
-      self.postMessage({ type: "status", text: hasWebGPU
-        ? "جاري تحميل نموذج Qwen3-0.6B على معالج الرسوميات…"
-        : "لا يتوفر WebGPU؛ سأحاول تشغيل النموذج محليًا عبر المعالج، وقد يكون بطيئًا…" });
+      const attempts = hasWebGPU
+        ? [{ device: "webgpu", dtype: "q4f16", label: "معالج الرسوميات" }, { device: "wasm", dtype: "q4", label: "معالج الجهاز" }]
+        : [{ device: "wasm", dtype: "q4", label: "معالج الجهاز" }];
+      let lastError = null;
 
-      generator = await pipeline("text-generation", MODEL_ID, {
-        device,
-        dtype,
-        progress_callback: (info) => {
-          if (info && info.status) self.postMessage({ type: "progress", info });
-        },
-      });
+      for (let i = 0; i < attempts.length; i++) {
+        const option = attempts[i];
+        self.postMessage({ type: "status", text: "جاري تحميل Qwen3-0.6B عبر " + option.label + "… قد يستغرق التحميل الأول بعض الوقت." });
+        try {
+          generator = await pipeline("text-generation", MODEL_ID, {
+            device: option.device,
+            dtype: option.dtype,
+            progress_callback: (info) => {
+              if (info && info.status) self.postMessage({ type: "progress", info });
+            },
+          });
+          break;
+        } catch (error) {
+          lastError = error;
+          generator = null;
+          if (i < attempts.length - 1) {
+            self.postMessage({ type: "status", text: "تعذر تشغيل نسخة الرسوميات؛ أجرب الآن وضع المعالج…" });
+          }
+        }
+      }
+
+      if (!generator) throw lastError || new Error("تعذر تهيئة النموذج");
       self.postMessage({ type: "ready", text: "النموذج جاهز داخل المتصفح" });
     } catch (error) {
       generator = null;
-      self.postMessage({ type: "error", text: "تعذر تحميل النموذج: " + (error?.message || String(error)) });
+      self.postMessage({ type: "error", text: "تعذر تحميل النموذج على هذا الجهاز: " + (error?.message || String(error)) });
     } finally {
       loading = false;
     }
@@ -50,7 +64,7 @@ self.onmessage = async (event) => {
         temperature: 0.7,
         repetition_penalty: 1.08,
       });
-      let generated = result?.[0]?.generated_text;
+      const generated = result?.[0]?.generated_text;
       let answer = "";
       if (Array.isArray(generated)) {
         const lastAssistant = [...generated].reverse().find((item) => item?.role === "assistant");
