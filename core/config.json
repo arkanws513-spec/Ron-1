@@ -1,0 +1,15 @@
+{
+  "model_name": "Ron-1 Native Core",
+  "architecture": "ron1_decoder_transformer",
+  "version": "0.1.0",
+  "vocab_size": 259,
+  "d_model": 128,
+  "n_heads": 4,
+  "n_layers": 4,
+  "d_ff": 384,
+  "max_seq_len": 256,
+  "seed": 1701,
+  "weights_file": "core/weights/ron1-native.pt",
+  "tokenizer": "utf8-byte-v1",
+  "pretrained": false
+}
