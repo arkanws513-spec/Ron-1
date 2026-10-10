@@ -5,6 +5,7 @@ const worker = readFileSync("ron-model-worker.js", "utf8");
 const html = readFileSync("index.html", "utf8");
 const pages = readFileSync(".github/workflows/pages.yml", "utf8");
 const modelDir = "models/onnx-community/SmolLM2-135M-Instruct-ONNX/";
+const modelDirV2 = "models-v2/onnx-community/SmolLM2-135M-Instruct-ONNX/";
 
 for (const file of [
   "config.json", "generation_config.json", "merges.txt",
@@ -23,6 +24,8 @@ for (const [path, expected] of chunks) {
   assert.equal(statSync(path).size, expected, `unexpected model chunk size: ${path}`);
 }
 assert.equal(chunks.reduce((sum, [, size]) => sum + size, 0), 117266133);
+const q4f16Config = JSON.parse(readFileSync(modelDirV2 + "config.json", "utf8"));
+assert.equal(q4f16Config["transformers.js_config"].kv_cache_dtype.q4f16, "float32");
 
 assert.match(worker, /AutoTokenizer\.from_pretrained\(MODEL_ID/);
 assert.match(worker, /AutoModelForCausalLM\.from_pretrained\(MODEL_ID/);

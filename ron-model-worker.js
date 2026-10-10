@@ -3,7 +3,7 @@ import { env, AutoTokenizer, AutoModelForCausalLM, TextStreamer } from "./vendor
 // Runtime library, tokenizer/configuration files, WASM and weights are served from Ron's GitHub repository/release.
 env.allowLocalModels = true;
 env.allowRemoteModels = true; // Enable fallback for the missing weights file; ronFetch restricts all external fetches below.
-env.localModelPath = new URL("./models/", self.location.href).href;
+env.localModelPath = new URL("./models-v2/", self.location.href).href;
 env.useBrowserCache = true;
 env.useWasmCache = true;
 env.backends.onnx.wasm.wasmPaths = new URL("./vendor/transformers/", self.location.href).href;

@@ -71,7 +71,7 @@ jobs:
           # Deploy only the static site and its local runtime assets.
           mkdir -p site
           cp index.html ron-model-worker.js site/
-          cp -R vendor models site/
+          cp -R vendor models models-v2 site/
 
       - name: Prepare same-origin Q4F16 chunks for browser CORS and low-memory devices
         shell: bash

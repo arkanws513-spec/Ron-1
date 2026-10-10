@@ -30,3 +30,6 @@ SmolLM2-135M نموذج صغير جاهز، وليس نموذجًا دُرّب �
 ## توافق الأجهزة محدودة الذاكرة
 
 يستخدم Ron-1 الآن نسخة ONNX **Q4F16** الأصغر (نحو 117 MB بدلًا من نحو 181 MB لنسخة Q4)، بهدف خفض ضغط الذاكرة أثناء تهيئة جلسة ONNX على الهواتف القديمة. يجري تجهيز هذه النسخة في GitHub Actions والتحقق من SHA-256 قبل رفعها إلى GitHub Release؛ لا ينزّل المتصفح النموذج من Hugging Face وقت التشغيل.
+
+
+The Q4F16 runtime configuration is versioned under `models-v2/` to avoid stale browser-cache metadata. Its KV-cache dtype is explicitly set to `float32`, matching the ONNX session input contract observed during browser inference tests.
