@@ -10,6 +10,7 @@ on:
         type: string
   push:
     branches:
+      - main
       - "ron1/native-core-interface-20261010"
     paths:
       - "scripts/build_arabic_seed_corpus.py"
