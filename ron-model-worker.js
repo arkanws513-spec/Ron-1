@@ -24,7 +24,7 @@ self.onmessage = async (event) => {
     if (model || loading) return;
     loading = true;
     try {
-      self.postMessage({ type: "status", text: "جاري تجهيز SmolLM2-135M بصيغة Q4 على معالج الجهاز. قد يستغرق التحميل الأول بعض الوقت." });
+      self.postMessage({ type: "status", text: "جاري تشغيل نواة Ron-1 المبنية على SmolLM2-135M بصيغة Q4. سيُعاد استخدام الملفات المخزنة في المتصفح متى أمكن، وقد يلزم تنزيلها إذا لم تكن متاحة في الذاكرة المحلية." });
       const loadedTokenizer = await AutoTokenizer.from_pretrained(MODEL_ID, {
         progress_callback: (info) => { if (info && info.status) self.postMessage({ type: "progress", info }); },
       });
