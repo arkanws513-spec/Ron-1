@@ -1,6 +1,18 @@
 import { AutoTokenizer, AutoModelForCausalLM } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
 
 const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
+// Keep the app on GitHub Pages and fetch the Q4 ONNX weights from this repo's GitHub Release.
+// Tokenizer/config files still come from the upstream model repository.
+const GITHUB_Q4_WEIGHTS_URL = "https://github.com/arkanws513-spec/Ron-1/releases/download/ron1-smollm2-135m-q4-v1/Ron-1-Smollm2-135M-Instruct-Q4.onnx";
+const originalFetch = globalThis.fetch.bind(globalThis);
+globalThis.fetch = (input, init) => {
+  const requestUrl = typeof input === "string" ? input : input?.url;
+  if (requestUrl && requestUrl.includes("huggingface.co/onnx-community/SmolLM2-135M-Instruct-ONNX/resolve/") && requestUrl.includes("/onnx/model_q4.onnx")) {
+    return originalFetch(GITHUB_Q4_WEIGHTS_URL, init);
+  }
+  return originalFetch(input, init);
+};
+
 let tokenizer = null;
 let model = null;
 let loading = false;
