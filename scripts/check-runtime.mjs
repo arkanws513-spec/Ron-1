@@ -12,7 +12,7 @@ for (const file of [
   "quantize_config.json", "special_tokens_map.json", "tokenizer.json",
   "tokenizer_config.json", "vocab.json"
 ]) {
-  assert.ok(statSync(modelDir + file).size > 0, \`missing model metadata: \${file}\`);
+  assert.ok(statSync(modelDir + file).size > 0, "missing model metadata: " + file);
 }
 const modelConfig = JSON.parse(readFileSync(modelDirV2 + "config.json", "utf8"));
 assert.equal(modelConfig["transformers.js_config"].kv_cache_dtype.q4, "float32");
