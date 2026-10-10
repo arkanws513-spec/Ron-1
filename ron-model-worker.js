@@ -14,18 +14,42 @@ env.backends.onnx.wasm.proxy = false;
 try { env.backends.onnx.logLevel = "verbose"; } catch {}
 
 const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
-const GITHUB_Q4F16_ASSET_API_URL = "https://api.github.com/repos/arkanws513-spec/Ron-1/releases/assets/627890887";
+const Q4F16_CHUNKS = [
+  new URL("./weights/ron1-q4f16-00.bin", self.location.href).href,
+  new URL("./weights/ron1-q4f16-01.bin", self.location.href).href,
+  new URL("./weights/ron1-q4f16-02.bin", self.location.href).href,
+];
+const Q4F16_EXPECTED_BYTES = 117266133;
+async function fetchQ4F16FromPages(init) {
+  // Release downloads lack reliable browser CORS headers, so fetch same-origin chunks.
+  const responses = await Promise.all(Q4F16_CHUNKS.map((url) => originalFetch(url, { signal: init?.signal })));
+  for (const response of responses) {
+    if (!response.ok) throw new Error("Failed to fetch a Ron-1 Q4F16 chunk: HTTP " + response.status);
+  }
+  const parts = await Promise.all(responses.map((response) => response.blob()));
+  const totalBytes = parts.reduce((total, part) => total + part.size, 0);
+  if (totalBytes !== Q4F16_EXPECTED_BYTES) {
+    throw new Error("Incomplete Ron-1 Q4F16 model: expected " + Q4F16_EXPECTED_BYTES + " bytes, received " + totalBytes);
+  }
+  const modelBlob = new Blob(parts, { type: "application/octet-stream" });
+  return new Response(modelBlob, {
+    status: 200,
+    headers: {
+      "Content-Type": "application/octet-stream",
+      "Content-Length": String(totalBytes),
+      "Accept-Ranges": "bytes"
+    }
+  });
+}
 const originalFetch = globalThis.fetch.bind(globalThis);
 // Transformers.js captures env.fetch at import time. Override both fetch entry points.
-// Only the exact Q4F16 weights file may leave GitHub Pages, and it is redirected to Ron-1's
-// GitHub Release. Every other request must remain same-origin (or be a local blob/data URL).
+// The canonical Q4F16 asset remains in Ron-1's GitHub Release. Browser-safe chunks are
+// served same-origin from Pages to avoid release CORS failures.
 const originalEnvFetch = typeof env.fetch === "function" ? env.fetch.bind(env) : originalFetch;
 function ronFetch(input, init, fallback) {
   const requestUrl = typeof input === "string" || input instanceof URL ? String(input) : input?.url;
   if (requestUrl && requestUrl.includes("SmolLM2-135M-Instruct-ONNX") && requestUrl.includes("onnx/model_q4f16.onnx")) {
-    const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : undefined));
-    headers.set("Accept", "application/octet-stream");
-    return originalFetch(GITHUB_Q4F16_ASSET_API_URL, { ...init, headers });
+    return fetchQ4F16FromPages(init);
   }
   if (requestUrl) {
     if (requestUrl.startsWith("blob:") || requestUrl.startsWith("data:")) return fallback(input, init);

@@ -73,6 +73,26 @@ jobs:
           cp index.html ron-model-worker.js site/
           cp -R vendor models site/
 
+      - name: Prepare same-origin Q4F16 chunks for browser CORS and low-memory devices
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="ron1-smollm2-135m-q4-v1"
+          ASSET="Ron-1-Smollm2-135M-Instruct-Q4F16.onnx"
+          EXPECTED_SHA256="662d0a9d8d5d56e3746a5bf3b3ede96bd2d4d3594d9b2e282baebd4f34cf3589"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$ASSET" --dir "$RUNNER_TEMP"
+          echo "$EXPECTED_SHA256  $RUNNER_TEMP/$ASSET" | sha256sum --check -
+          split -b 40000000 --numeric-suffixes=0 --suffix-length=2 "$RUNNER_TEMP/$ASSET" "$RUNNER_TEMP/ron1-q4f16-part-"
+          test "$(stat -c %s "$RUNNER_TEMP/ron1-q4f16-part-00")" = "40000000"
+          test "$(stat -c %s "$RUNNER_TEMP/ron1-q4f16-part-01")" = "40000000"
+          test "$(stat -c %s "$RUNNER_TEMP/ron1-q4f16-part-02")" = "37266133"
+          mkdir -p site/weights
+          cp "$RUNNER_TEMP/ron1-q4f16-part-00" site/weights/ron1-q4f16-00.bin
+          cp "$RUNNER_TEMP/ron1-q4f16-part-01" site/weights/ron1-q4f16-01.bin
+          cp "$RUNNER_TEMP/ron1-q4f16-part-02" site/weights/ron1-q4f16-02.bin
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
