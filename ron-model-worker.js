@@ -1,35 +1,26 @@
 import { env, AutoTokenizer, AutoModelForCausalLM } from "./vendor/transformers/transformers.min.js";
 
-// Runtime library, tokenizer/configuration files, WASM and weights are all served by GitHub.
+// Runtime library, tokenizer/configuration files, WASM and weights are served from Ron's GitHub repository/release.
 env.allowLocalModels = true;
 env.allowRemoteModels = false;
 env.localModelPath = new URL("./models/", self.location.href).href;
 env.useBrowserCache = true;
 env.useWasmCache = true;
 env.backends.onnx.wasm.wasmPaths = new URL("./vendor/transformers/", self.location.href).href;
-// Keep the WebAssembly runtime conservative for phones and memory-limited browsers.
-env.backends.onnx.wasm.numThreads = 1;
-env.backends.onnx.wasm.proxy = false;
 
 const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
 const GITHUB_Q4_WEIGHTS_URL = "https://github.com/arkanws513-spec/Ron-1/releases/download/ron1-smollm2-135m-q4-v1/Ron-1-Smollm2-135M-Instruct-Q4.onnx";
 const originalFetch = globalThis.fetch.bind(globalThis);
 
-// Enforce a GitHub-only runtime: local GitHub Pages files and this GitHub Release are allowed.
-const githubOnlyFetch = (input, init) => {
+// Redirect only the expected Q4 model file to the copy hosted in Ron-1's GitHub Release.
+// Leave the browser's normal fetch handling intact for WASM/runtime internals.
+globalThis.fetch = (input, init) => {
   const requestUrl = typeof input === "string" || input instanceof URL ? String(input) : input?.url;
-  if (!requestUrl) throw new Error("Ron-1 blocked a request without a URL.");
-  const url = new URL(requestUrl, self.location.href);
-  if (url.pathname.includes("/models/onnx-community/SmolLM2-135M-Instruct-ONNX/onnx/model_q4.onnx")) {
+  if (requestUrl && requestUrl.includes("/models/onnx-community/SmolLM2-135M-Instruct-ONNX/onnx/model_q4.onnx")) {
     return originalFetch(GITHUB_Q4_WEIGHTS_URL, init);
   }
-  if (url.origin === self.location.origin || url.href === GITHUB_Q4_WEIGHTS_URL) {
-    return originalFetch(input, init);
-  }
-  throw new Error("Ron-1 blocked an external runtime request: " + url.origin);
+  return originalFetch(input, init);
 };
-globalThis.fetch = githubOnlyFetch;
-env.fetch = githubOnlyFetch;
 
 let tokenizer = null;
 let model = null;
@@ -42,7 +33,7 @@ self.onmessage = async (event) => {
     if (model || loading) return;
     loading = true;
     try {
-      self.postMessage({ type: "status", text: "جاري تشغيل نواة Ron-1 المبنية على SmolLM2-135M بصيغة Q4. سيُعاد استخدام الملفات المخزنة في المتصفح متى أمكن، وقد يلزم تنزيلها إذا لم تكن متاحة في الذاكرة المحلية." });
+      self.postMessage({ type: "status", text: "جاري تشغيل نواة Ron-1 المبنية على SmolLM2-135M بصيغة Q4. سيُعاد استخدام الملفات المخزنة في المتصفح متى أمكن، وقد يلزم تنزيلها إذا لم تكن متاحة محليًا." });
       const loadedTokenizer = await AutoTokenizer.from_pretrained(MODEL_ID, {
         progress_callback: (info) => { if (info && info.status) self.postMessage({ type: "progress", info }); },
       });
@@ -54,15 +45,19 @@ self.onmessage = async (event) => {
       model = loadedModel;
       self.postMessage({ type: "ready", text: "النموذج جاهز داخل المتصفح" });
     } catch (error) {
-      tokenizer = null; model = null;
-      const details = [error?.name, error?.message || String(error), error?.stack].filter(Boolean).join("\\n");
-      self.postMessage({ type: "error", text: "تعذر تحميل النموذج على هذا الجهاز. قد يكون السبب حدّ ذاكرة المتصفح أو عدم توافق WebAssembly. التفاصيل: " + details + ". لم نبدأ تنزيلًا ثانيًا تلقائيًا؛ حدّث الصفحة وجرب متصفحًا حديثًا أو جهازًا بذاكرة أكبر، ثم أرسل التفاصيل إن استمر الخطأ." });
-    } finally { loading = false; }
+      tokenizer = null;
+      model = null;
+      const details = [error?.name, error?.message || String(error), error?.stack].filter(Boolean).join("\n");
+      self.postMessage({ type: "error", text: "تعذر تحميل النموذج: " + details + ". لم يبدأ تنزيلًا ثانيًا تلقائيًا؛ جرّب إعادة تحميل الصفحة. إذا تكرر الخطأ فستظهر تفاصيل أوضح لتحديد السبب." });
+    } finally {
+      loading = false;
+    }
     return;
   }
   if (type === "generate") {
     if (!model || !tokenizer || generating) {
-      self.postMessage({ type: "error", text: generating ? "رون ما زال يجهز الرد السابق." : "حمّل النموذج أولًا." }); return;
+      self.postMessage({ type: "error", text: generating ? "رون ما زال يجهز الرد السابق." : "حمّل النموذج أولًا." });
+      return;
     }
     generating = true;
     try {
@@ -74,6 +69,8 @@ self.onmessage = async (event) => {
       self.postMessage({ type: "answer", text: answer || "لم ينتج النموذج إجابة واضحة؛ جرّب صياغة السؤال مرة أخرى." });
     } catch (error) {
       self.postMessage({ type: "error", text: "تعذر توليد الرد: " + (error?.message || String(error)) });
-    } finally { generating = false; }
+    } finally {
+      generating = false;
+    }
   }
 };
