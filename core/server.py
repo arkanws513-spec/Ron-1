@@ -67,7 +67,7 @@ def health_payload():
 
 def make_prompt(message, history):
     parts = [
-        "أنت رون، مساعد عربي مستقل. أجب عن رسالة المستخدم بوضوح.\\n"
+        "أنت رون، مساعد عربي مستقل. أجب عن رسالة المستخدم بوضوح.\n"
     ]
     safe_history = history if isinstance(history, list) else []
     for item in safe_history[-8:]:
@@ -77,9 +77,9 @@ def make_prompt(message, history):
         if role not in ("user", "assistant") or not isinstance(content, str):
             continue
         content = content[:2000]
-        parts.append(("المستخدم: " if role == "user" else "رون: ") + content + "\\n")
+        parts.append(("المستخدم: " if role == "user" else "رون: ") + content + "\n")
     if not safe_history or not any(isinstance(item, dict) and item.get("role") == "user" and item.get("content") == message for item in safe_history[-8:]):
-        parts.append("المستخدم: " + message[:2000] + "\\n")
+        parts.append("المستخدم: " + message[:2000] + "\n")
     parts.append("رون: ")
     return "".join(parts)
 
