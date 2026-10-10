@@ -1,0 +1,94 @@
+name: Train Ron-1 native core (from scratch)
+
+on:
+  workflow_dispatch:
+    inputs:
+      steps:
+        description: "Training steps (small bootstrap run; increase only after reviewing runtime)"
+        required: true
+        default: "1200"
+        type: string
+  push:
+    branches:
+      - "ron1/native-core-interface-20261010"
+    paths:
+      - "scripts/build_arabic_seed_corpus.py"
+      - "core/ron1_core.py"
+      - "core/train.py"
+      - "core/config.json"
+      - ".github/workflows/train-native.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ron1-native-training-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout Ron-1
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install native training dependency
+        run: python -m pip install --upgrade pip torch
+      - name: Build traceable Arabic starter corpus
+        run: python scripts/build_arabic_seed_corpus.py
+      - name: Train Ron-1 from its own random initialization
+        env:
+          TRAIN_STEPS: ${{ github.event.inputs.steps || '1200' }}
+        run: |
+          case "$TRAIN_STEPS" in
+            ''|*[!0-9]*) echo "TRAIN_STEPS must be an integer"; exit 2 ;;
+          esac
+          if [ "$TRAIN_STEPS" -lt 100 ] || [ "$TRAIN_STEPS" -gt 5000 ]; then
+            echo "TRAIN_STEPS must be between 100 and 5000 for this starter workflow"
+            exit 2
+          fi
+          cd core
+          python train.py --data ../data/seed-corpus --steps "$TRAIN_STEPS" --batch-size 4 --lr 0.0003 --output weights/ron1-native.pt
+      - name: Verify trained checkpoint and generation
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          import torch
+          sys.path.insert(0, str(Path("core").resolve()))
+          from ron1_core import ByteTokenizer, Ron1Core
+          p = Path("core/weights/ron1-native.pt")
+          ck = torch.load(p, map_location="cpu", weights_only=False)
+          assert ck.get("format") == "ron1-native-state-dict-v1"
+          assert ck.get("trained") is True
+          assert int(ck.get("step", 0)) >= 100
+          model = Ron1Core(ck["config"])
+          model.load_state_dict(ck["state_dict"], strict=True)
+          model.eval()
+          tok = ByteTokenizer()
+          ids = torch.tensor([tok.encode("رون:", add_bos=True)], dtype=torch.long)
+          with torch.inference_mode():
+              out = model.generate(ids, max_new_tokens=8, temperature=0)
+          assert out.shape[1] > ids.shape[1]
+          print(json.dumps({
+              "model": ck.get("model_name"),
+              "trained_steps": ck.get("step"),
+              "parameters": sum(p.numel() for p in model.parameters()),
+              "checkpoint_bytes": p.stat().st_size,
+              "generation_smoke_test": "passed",
+          }, ensure_ascii=False))
+          PY
+      - name: Preserve checkpoint and dataset provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: ron1-native-trained-bootstrap
+          path: |
+            core/weights/ron1-native.pt
+            data/seed-corpus/manifest.json
+          if-no-files-found: error
+          retention-days: 30

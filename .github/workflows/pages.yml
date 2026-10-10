@@ -1,10 +1,10 @@
-name: Publish Ron-1 to GitHub Pages
+name: Publish Ron-1 Native Core interface
 on:
   push:
     branches: [main]
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 concurrency:
@@ -14,103 +14,22 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out Ron-1
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download Q4 ONNX weights for WASM-compatible inference
-        shell: bash
+      - name: Prepare interface-only site
         run: |
           set -euo pipefail
-          ASSET="$RUNNER_TEMP/Ron-1-Smollm2-135M-Instruct-Q4.onnx"
-          echo "Downloading the Q4 ONNX artifact during CI; browsers will use only same-origin Ron-1 files."
-          curl --fail --location --retry 3 --retry-all-errors \
-            "https://huggingface.co/onnx-community/SmolLM2-135M-Instruct-ONNX/resolve/main/onnx/model_q4.onnx?download=true" \
-            --output "$ASSET"
-          test -s "$ASSET"
-          BYTES="$(stat -c %s "$ASSET")"
-          test "$BYTES" -gt 1000000
-          echo "Q4 model bytes: $BYTES"
-          sha256sum "$ASSET"
-
-      - name: Prepare GitHub-hosted runtime assets
-        shell: bash
-        run: |
-          set -euo pipefail
-          MODEL_DIR="models/onnx-community/SmolLM2-135M-Instruct-ONNX"
-          VENDOR_DIR="vendor/transformers"
-          mkdir -p "$MODEL_DIR" "$VENDOR_DIR"
-
-          # GitHub-only policy: all runtime and model metadata must already be committed here.
-          test -s "$VENDOR_DIR/transformers.min.js"
-          compgen -G "$VENDOR_DIR/ort-wasm*.wasm" >/dev/null
-          for file in config.json generation_config.json merges.txt quantize_config.json special_tokens_map.json tokenizer.json tokenizer_config.json vocab.json; do
-            test -s "$MODEL_DIR/$file"
-          done
-
-          # Commit the vendored runtime/model metadata so future app runs and deployments
-          # do not need npm or Hugging Face at all.
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$VENDOR_DIR"
-          git add -f "$MODEL_DIR"
-          if ! git diff --cached --quiet; then
-            git commit -m "Vendor Ron-1 runtime and SmolLM2 metadata for GitHub-only hosting"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
-          fi
-
-          # Deploy only the static site and its local runtime assets.
           mkdir -p site
-          cp index.html ron-model-worker.js sw.js site/
-          cp -R vendor models models-v2 site/
-
-      - name: Prepare same-origin Q4 shards and manifest for Ron-1 core
-        shell: bash
-        run: |
-          set -euo pipefail
-          ASSET="$RUNNER_TEMP/Ron-1-Smollm2-135M-Instruct-Q4.onnx"
-          test -s "$ASSET"
-          split -b 40000000 --numeric-suffixes=0 --suffix-length=2 "$ASSET" "$RUNNER_TEMP/ron1-q4-part-"
-          mkdir -p site/weights weights
-          for part in "$RUNNER_TEMP"/ron1-q4-part-*; do
-            suffix="${part##*-}"
-            cp "$part" "site/weights/ron1-q4-${suffix}.bin"
-            cp "$part" "weights/ron1-q4-${suffix}.bin"
-          done
-          python - <<'PY'
-          import json, re
-          from pathlib import Path
-          files = sorted(p for p in Path("weights").glob("ron1-q4-*.bin") if re.fullmatch(r"ron1-q4-\d{2}\.bin", p.name))
-          if len(files) < 2:
-              raise SystemExit("Expected at least two Q4 shards")
-          manifest = {"format": "onnx-q4-shards-v1", "totalBytes": sum(p.stat().st_size for p in files),
-                      "chunks": [{"file": p.name, "size": p.stat().st_size} for p in files]}
-          if manifest["totalBytes"] < 1000000:
-              raise SystemExit("Q4 model artifact is unexpectedly small")
-          for destination in (Path("weights/ron1-q4-manifest.json"), Path("site/weights/ron1-q4-manifest.json")):
-              destination.write_text(json.dumps(manifest, separators=(",", ":")) + "\n", encoding="utf-8")
-          print(json.dumps(manifest))
-          PY
-          git add weights/ron1-q4-*.bin weights/ron1-q4-manifest.json
-          if ! git diff --cached --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "Bundle Q4 model shards for Ron-1 WASM core"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
-          fi
-
+          cp index.html sw.js site/
+          # Deliberately do not bundle SmolLM2, ONNX, Transformers.js, or any model weights.
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
-
       - name: Deploy GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
