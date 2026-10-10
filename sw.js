@@ -1,5 +1,4 @@
 const CACHE_NAME = "ron1-runtime-v1";
-const MODEL_PATH = /\/(?:weights\/ron1-q4f16-\\d+\\.bin|vendor\/transformers\/|models-v2?\/)/;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
@@ -27,7 +26,7 @@ self.addEventListener("fetch", (event) => {
     const response = await fetch(request);
     if (response.ok && response.type !== "opaque" && request.headers.get("range") === null) {
       const isAppAsset = request.mode === "navigate"
-        || /\/(?:index\\.html|ron-model-worker\\.js|vendor\/transformers\/|models-v2?\/|weights\/ron1-q4f16-\\d+\\.bin)/.test(url.pathname);
+        || /\/(?:index\.html|ron-model-worker\.js|vendor\/transformers\/|models-v2?\/|weights\/ron1-q4f16-\d+\.bin)/.test(url.pathname);
       if (isAppAsset) {
         // Large weight chunks may exceed a device's storage quota. Cache failures must never break inference.
         event.waitUntil(cache.put(request, response.clone()).catch(() => undefined));
