@@ -3,7 +3,7 @@ import {
   AutoModelForCausalLM,
 } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
 
-const MODEL_ID = "onnx-community/Qwen2.5-0.5B-Instruct";
+const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
 let tokenizer = null;
 let model = null;
 let loading = false;
@@ -73,7 +73,7 @@ self.onmessage = async (event) => {
       });
       const output = await model.generate({
         ...inputs,
-        max_new_tokens: 96,
+        max_new_tokens: 64,
         do_sample: true,
         top_k: 20,
         temperature: 0.7,
