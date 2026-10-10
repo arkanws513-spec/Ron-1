@@ -20,13 +20,19 @@ async function fetchQ4FromPages(init) {
   const manifestResponse = await originalFetch(manifestUrl, { signal: init?.signal });
   if (!manifestResponse.ok) throw new Error("Failed to load Ron-1 Q4 manifest: HTTP " + manifestResponse.status);
   const manifest = await manifestResponse.json();
-  if (!Array.isArray(manifest.chunks) || !Number.isSafeInteger(manifest.totalBytes) || manifest.totalBytes < 1000000) {
+  if (manifest.format !== "onnx-q4-shards-v1" || !Array.isArray(manifest.chunks) ||
+      manifest.chunks.length < 2 || manifest.chunks.length > 99 ||
+      !Number.isSafeInteger(manifest.totalBytes) || manifest.totalBytes < 1000000) {
     throw new Error("Invalid Ron-1 Q4 manifest");
   }
-  const chunks = manifest.chunks.map((item) => {
-    if (!item || !/^ron1-q4-\d{2}\.bin$/.test(item.file) || !Number.isSafeInteger(item.size) || item.size <= 0) {
-      throw new Error("Invalid entry in Ron-1 Q4 manifest");
+  const seenFiles = new Set();
+  const chunks = manifest.chunks.map((item, index) => {
+    const expectedFile = "ron1-q4-" + String(index).padStart(2, "0") + ".bin";
+    if (!item || item.file !== expectedFile || seenFiles.has(item.file) ||
+        !Number.isSafeInteger(item.size) || item.size <= 0) {
+      throw new Error("Invalid or out-of-order entry in Ron-1 Q4 manifest");
     }
+    seenFiles.add(item.file);
     return { url: new URL("./weights/" + item.file, self.location.href).href, size: item.size };
   });
   if (chunks.reduce((sum, item) => sum + item.size, 0) !== manifest.totalBytes) {
