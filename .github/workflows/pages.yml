@@ -52,7 +52,8 @@ jobs:
           # do not need npm or Hugging Face at all.
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$VENDOR_DIR" "$MODEL_DIR"
+          git add "$VENDOR_DIR"
+          git add -f "$MODEL_DIR"
           if ! git diff --cached --quiet; then
             git commit -m "Vendor Ron-1 runtime and SmolLM2 metadata for GitHub-only hosting"
             git push origin "HEAD:${GITHUB_REF_NAME}"
