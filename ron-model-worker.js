@@ -188,7 +188,7 @@ self.onmessage = async (event) => {
         output = await model.generate({ ...inputs, max_new_tokens: 80, do_sample: false, repetition_penalty: 1.08, streamer });
       } catch (firstError) {
         const detail = String(firstError?.message || firstError);
-        if (!/Unexpected input data type|tensor\\(float16\\).*tensor\\(float\\)|expected tensor\\(float\\)/i.test(detail)) throw firstError;
+        if (!/Unexpected input data type|tensor\(float16\).*tensor\(float\)|expected tensor\(float\)/i.test(detail)) throw firstError;
         self.postMessage({ type: "generation_reset" });
         self.postMessage({ type: "status", text: "رصد رون تعارضًا في نوع بيانات ذاكرة الاستدلال؛ يجرب مسار توافق أبطأ…" });
         output = await model.generate({ ...inputs, use_cache: false, max_new_tokens: 48, do_sample: false, repetition_penalty: 1.08, streamer });
