@@ -7,6 +7,9 @@ env.localModelPath = new URL("./models/", self.location.href).href;
 env.useBrowserCache = true;
 env.useWasmCache = true;
 env.backends.onnx.wasm.wasmPaths = new URL("./vendor/transformers/", self.location.href).href;
+// Prefer the lowest-resource WASM execution path for older Android devices.
+env.backends.onnx.wasm.numThreads = 1;
+env.backends.onnx.wasm.proxy = false;
 
 const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
 const GITHUB_Q4_WEIGHTS_URL = "https://github.com/arkanws513-spec/Ron-1/releases/download/ron1-smollm2-135m-q4-v1/Ron-1-Smollm2-135M-Instruct-Q4.onnx";
@@ -26,31 +29,44 @@ let tokenizer = null;
 let model = null;
 let loading = false;
 let generating = false;
+let loadingStage = "idle";
+
+function describeError(error) {
+  if (typeof error === "number") {
+    return "numeric runtime error " + error + " (0x" + (error >>> 0).toString(16) + ")";
+  }
+  if (typeof error === "string") return error;
+  return [error?.name, error?.message, error?.stack].filter(Boolean).join("\n") || String(error);
+}
 
 self.onmessage = async (event) => {
   const { type, messages } = event.data || {};
   if (type === "load") {
     if (model || loading) return;
     loading = true;
+    loadingStage = "tokenizer";
     try {
       self.postMessage({ type: "status", text: "جاري تشغيل نواة Ron-1 المبنية على SmolLM2-135M بصيغة Q4. سيُعاد استخدام الملفات المخزنة في المتصفح متى أمكن، وقد يلزم تنزيلها إذا لم تكن متاحة محليًا." });
       const loadedTokenizer = await AutoTokenizer.from_pretrained(MODEL_ID, {
         progress_callback: (info) => { if (info && info.status) self.postMessage({ type: "progress", info }); },
       });
+      loadingStage = "ONNX model/session initialization";
       const loadedModel = await AutoModelForCausalLM.from_pretrained(MODEL_ID, {
         device: "wasm", dtype: "q4",
         progress_callback: (info) => { if (info && info.status) self.postMessage({ type: "progress", info }); },
       });
+      loadingStage = "finalizing model";
       tokenizer = loadedTokenizer;
       model = loadedModel;
       self.postMessage({ type: "ready", text: "النموذج جاهز داخل المتصفح" });
     } catch (error) {
       tokenizer = null;
       model = null;
-      const details = [error?.name, error?.message || String(error), error?.stack].filter(Boolean).join("\n");
-      self.postMessage({ type: "error", text: "تعذر تحميل النموذج: " + details + ". لم يبدأ تنزيلًا ثانيًا تلقائيًا؛ جرّب إعادة تحميل الصفحة. إذا تكرر الخطأ فستظهر تفاصيل أوضح لتحديد السبب." });
+      const details = describeError(error);
+      self.postMessage({ type: "error", text: "فشل التحميل في مرحلة " + loadingStage + ": " + details + ". لم يبدأ تنزيلًا ثانيًا تلقائيًا." });
     } finally {
       loading = false;
+      loadingStage = "idle";
     }
     return;
   }
