@@ -5,6 +5,11 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/deploy-ron-server.yml"
+      - "app.py"
+      - "requirements.txt"
+      - "core/**"
+      - "model/**"
+      - "api/**"
   workflow_dispatch:
 
 jobs:
@@ -28,10 +33,7 @@ jobs:
               raise SystemExit("HF_TOKEN secret is required; no repositories were deleted.")
           api = HfApi(token=token)
           owner = "arkanws513"
-          keep = {
-              "arkanws513/Ron-1-server",
-              "arkanws513/Ron-1",
-          }
+          keep = {"arkanws513/Ron-1-server"}
 
           repos = []
           for repo_type, listing in (
@@ -54,14 +56,28 @@ jobs:
                   failures.append((repo_type, repo_id, str(exc)))
                   print(f"FAILED {repo_type}: {repo_id}: {type(exc).__name__}: {exc}")
 
-          print("Protected Ron-1 repositories:")
-          for repo_id in sorted(keep):
-              print(f"KEEP: {repo_id}")
-
           if failures:
               raise SystemExit(f"{len(failures)} repository deletions failed; see log above.")
           PY
-      - name: Ensure Ron-1 Space files are deployed
+      - name: Prepare Ron-1 Space files
+        run: |
+          rm -rf hf_space
+          mkdir -p hf_space
+          cp -r app.py requirements.txt core model api hf_space/
+          cat > hf_space/README.md <<'EOF'
+          ---
+          title: Ron-1
+          emoji: 🤖
+          colorFrom: blue
+          colorTo: purple
+          sdk: gradio
+          app_file: app.py
+          pinned: false
+          ---
+          # Ron-1
+          Ron-1 — Qwen3-1.7B local inference server.
+          EOF
+      - name: Deploy Ron-1 to its existing Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -70,9 +86,13 @@ jobs:
           from huggingface_hub import HfApi
           api = HfApi(token=os.environ["HF_TOKEN"])
           repo = "arkanws513/Ron-1-server"
-          try:
-              api.restart_space(repo_id=repo)
-              print(f"Requested restart for {repo}.")
-          except Exception as exc:
-              print(f"Restart request did not complete: {type(exc).__name__}: {exc}")
+          api.upload_folder(
+              repo_id=repo,
+              repo_type="space",
+              folder_path="hf_space",
+              commit_message="Deploy Ron-1 and preserve its Space",
+          )
+          print(f"Uploaded Ron-1 files to {repo}.")
+          api.restart_space(repo_id=repo)
+          print(f"Requested restart for {repo}.")
           PY
