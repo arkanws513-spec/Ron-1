@@ -14,15 +14,28 @@ env.backends.onnx.wasm.proxy = false;
 try { env.backends.onnx.logLevel = "verbose"; } catch {}
 
 const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
-const Q4_CHUNKS = [
-  new URL("./weights/ron1-q4-00.bin", self.location.href).href,
-  new URL("./weights/ron1-q4-01.bin", self.location.href).href,
-  new URL("./weights/ron1-q4-02.bin", self.location.href).href,
-];
-const Q4_MIN_EXPECTED_BYTES = 1000000;
 async function fetchQ4FromPages(init) {
-  // Stream same-origin chunks sequentially: no cross-origin Release fetch and no extra 117 MB Blob copy.
+  // The manifest and every binary shard are deployed with Ron-1 on the same origin.
+  const manifestUrl = new URL("./weights/ron1-q4-manifest.json", self.location.href);
+  const manifestResponse = await originalFetch(manifestUrl, { signal: init?.signal });
+  if (!manifestResponse.ok) throw new Error("Failed to load Ron-1 Q4 manifest: HTTP " + manifestResponse.status);
+  const manifest = await manifestResponse.json();
+  if (!Array.isArray(manifest.chunks) || !Number.isSafeInteger(manifest.totalBytes) || manifest.totalBytes < 1000000) {
+    throw new Error("Invalid Ron-1 Q4 manifest");
+  }
+  const chunks = manifest.chunks.map((item) => {
+    if (!item || !/^ron1-q4-\d{2}\.bin$/.test(item.file) || !Number.isSafeInteger(item.size) || item.size <= 0) {
+      throw new Error("Invalid entry in Ron-1 Q4 manifest");
+    }
+    return { url: new URL("./weights/" + item.file, self.location.href).href, size: item.size };
+  });
+  if (chunks.reduce((sum, item) => sum + item.size, 0) !== manifest.totalBytes) {
+    throw new Error("Ron-1 Q4 manifest size mismatch");
+  }
+
   let chunkIndex = 0;
+  let currentChunk = null;
+  let currentChunkBytes = 0;
   let reader = null;
   let totalBytes = 0;
   const body = new ReadableStream({
@@ -30,24 +43,31 @@ async function fetchQ4FromPages(init) {
       try {
         while (true) {
           if (!reader) {
-            if (chunkIndex >= Q4_CHUNKS.length) {
-              if (totalBytes < Q4_MIN_EXPECTED_BYTES) {
-                controller.error(new Error("Incomplete Ron-1 Q4 model: expected at least " + Q4_MIN_EXPECTED_BYTES + " bytes, received " + totalBytes));
+            if (chunkIndex >= chunks.length) {
+              if (totalBytes !== manifest.totalBytes) {
+                controller.error(new Error("Incomplete Ron-1 Q4 model: expected " + manifest.totalBytes + " bytes, received " + totalBytes));
               } else {
                 controller.close();
               }
               return;
             }
-            const response = await originalFetch(Q4_CHUNKS[chunkIndex++], { signal: init?.signal });
+            currentChunk = chunks[chunkIndex++];
+            currentChunkBytes = 0;
+            const response = await originalFetch(currentChunk.url, { signal: init?.signal });
             if (!response.ok) throw new Error("Failed to fetch a Ron-1 Q4 chunk: HTTP " + response.status);
             if (!response.body) throw new Error("Ron-1 Q4 chunk has no readable response body");
             reader = response.body.getReader();
           }
           const part = await reader.read();
           if (part.done) {
+            if (currentChunkBytes !== currentChunk.size) {
+              throw new Error("Incomplete Ron-1 Q4 chunk: expected " + currentChunk.size + " bytes, received " + currentChunkBytes);
+            }
             reader = null;
+            currentChunk = null;
             continue;
           }
+          currentChunkBytes += part.value.byteLength;
           totalBytes += part.value.byteLength;
           controller.enqueue(part.value);
           return;
