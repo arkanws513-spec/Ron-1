@@ -15,16 +15,16 @@ self.onmessage = async (event) => {
   if (type === "load") {
     if (model || loading) return;
     loading = true;
-    const hasWebGPU = typeof navigator !== "undefined" && !!navigator.gpu;
-    const attempts = hasWebGPU
-      ? [{ device: "webgpu", dtype: "q4f16", label: "معالج الرسوميات" }, { device: "wasm", dtype: "q4", label: "معالج الجهاز" }]
-      : [{ device: "wasm", dtype: "q4", label: "معالج الجهاز" }];
+    const attempts = [
+      { device: "wasm", dtype: "q4", label: "معالج الجهاز" },
+      { device: "wasm", dtype: "q4f16", label: "معالج الجهاز (صيغة بديلة)" },
+    ];
     let lastError = null;
 
     for (let i = 0; i < attempts.length; i++) {
       const option = attempts[i];
       try {
-        self.postMessage({ type: "status", text: "جاري تحميل Qwen2.5-0.5B عبر " + option.label + "… قد يستغرق التحميل الأول بعض الوقت." });
+        self.postMessage({ type: "status", text: "جاري تشغيل SmolLM2-135M-Instruct عبر " + option.label + "… قد يستغرق التحميل الأول بعض الوقت." });
         const loadedTokenizer = await AutoTokenizer.from_pretrained(MODEL_ID, {
           progress_callback: (info) => {
             if (info && info.status) self.postMessage({ type: "progress", info });
@@ -45,7 +45,7 @@ self.onmessage = async (event) => {
         tokenizer = null;
         model = null;
         if (i < attempts.length - 1) {
-          self.postMessage({ type: "status", text: "تعذر تشغيل نسخة الرسوميات؛ أجرب الآن وضع المعالج…" });
+          self.postMessage({ type: "status", text: "صيغة التشغيل الأولى لم تنجح؛ أجرب صيغة بديلة على المعالج…" });
         }
       }
     }
