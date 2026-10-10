@@ -21,6 +21,35 @@ jobs:
         uses: actions/checkout@v4
       - name: Install Hugging Face Hub
         run: python -m pip install --upgrade huggingface_hub
+      - name: Pause older compute Spaces to free CPU-basic capacity
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+
+          token = os.environ.get("HF_TOKEN")
+          if not token:
+              raise SystemExit("HF_TOKEN secret is required to manage Hugging Face Spaces.")
+          api = HfApi(token=token)
+          target = "arkanws513/Ron-1-server"
+          spaces = list(api.list_spaces(author="arkanws513"))
+          print(f"Found {len(spaces)} Spaces owned by arkanws513.")
+          for space in spaces:
+              repo = getattr(space, "id", None)
+              sdk = getattr(space, "sdk", None)
+              if not repo or repo == target:
+                  continue
+              if sdk == "static":
+                  print(f"Keeping static Space unchanged: {repo}")
+                  continue
+              try:
+                  api.pause_space(repo_id=repo)
+                  print(f"Paused old Space: {repo}")
+              except Exception as exc:
+                  print(f"Could not pause {repo}: {type(exc).__name__}: {exc}")
+          PY
       - name: Prepare Hugging Face Space
         run: |
           rm -rf hf_space
@@ -59,4 +88,9 @@ jobs:
               commit_message="Deploy Ron-1 to existing Gradio Space",
           )
           print("Ron-1 files uploaded to the existing Hugging Face Space.")
+          try:
+              api.restart_space(repo_id=repo)
+              print("Requested restart for Ron-1.")
+          except Exception as exc:
+              print(f"Ron-1 restart request did not complete: {type(exc).__name__}: {exc}")
           PY
