@@ -1,23 +1,33 @@
-name: Ron-1 static checks
+name: Ron-1 native-core checks
 on:
   push:
-    branches: [main]
+    branches: [main, ron1-native-core-bootstrap]
   pull_request:
   workflow_dispatch:
 jobs:
-  check-static-app:
+  check-native-core:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check JavaScript syntax
-        run: node --input-type=module --check < ron-model-worker.js
-      - name: Check service worker syntax
-        run: node --check sw.js
-      - name: Check training scripts syntax
-        run: python -m py_compile training/train_lora.py training/merge_lora.py
-      - name: Check required browser app files
-        run: test -s index.html && test -s ron-model-worker.js && grep -q 'SmolLM2-135M-Instruct-ONNX' ron-model-worker.js
-      - name: Check model assets and inference contract
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Check interface and service-worker syntax
+        run: |
+          node --check sw.js
+          python - <<'PY'
+          from pathlib import Path
+          html = Path("index.html").read_text(encoding="utf-8")
+          script = html.split("<script>", 1)[1].split("</script>", 1)[0]
+          Path("/tmp/ron1-ui.js").write_text(script, encoding="utf-8")
+          PY
+          node --check /tmp/ron1-ui.js
+      - name: Check Python syntax
+        run: python -m py_compile core/ron1_core.py core/server.py core/initialize.py core/train.py
+      - name: Check native-core interface contract
         run: node scripts/check-runtime.mjs
-      - name: Check patch whitespace
+      - name: Check whitespace
         run: git diff --check
