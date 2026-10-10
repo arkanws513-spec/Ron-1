@@ -68,32 +68,39 @@ jobs:
           cp index.html ron-model-worker.js sw.js site/
           cp -R vendor models models-v2 site/
 
-      - name: Prepare same-origin Q4 chunks for the Ron-1 core
+      - name: Prepare same-origin Q4 shards and manifest for Ron-1 core
         shell: bash
         run: |
           set -euo pipefail
           ASSET="$RUNNER_TEMP/Ron-1-Smollm2-135M-Instruct-Q4.onnx"
           test -s "$ASSET"
           split -b 40000000 --numeric-suffixes=0 --suffix-length=2 "$ASSET" "$RUNNER_TEMP/ron1-q4-part-"
-          test "$(stat -c %s "$RUNNER_TEMP/ron1-q4-part-00")" = "40000000"
-          test "$(stat -c %s "$RUNNER_TEMP/ron1-q4-part-01")" = "40000000"
-          test "$(stat -c %s "$RUNNER_TEMP/ron1-q4-part-02")" -gt "0"
-          mkdir -p site/weights
-          cp "$RUNNER_TEMP/ron1-q4-part-00" site/weights/ron1-q4-00.bin
-          cp "$RUNNER_TEMP/ron1-q4-part-01" site/weights/ron1-q4-01.bin
-          cp "$RUNNER_TEMP/ron1-q4-part-02" site/weights/ron1-q4-02.bin
-
-          # Keep the same chunks in the repository root for the default Pages publisher.
-          mkdir -p weights
-          cp "$RUNNER_TEMP/ron1-q4-part-00" weights/ron1-q4-00.bin
-          cp "$RUNNER_TEMP/ron1-q4-part-01" weights/ron1-q4-01.bin
-          cp "$RUNNER_TEMP/ron1-q4-part-02" weights/ron1-q4-02.bin
-          git add weights/ron1-q4-00.bin weights/ron1-q4-01.bin weights/ron1-q4-02.bin
+          mkdir -p site/weights weights
+          for part in "$RUNNER_TEMP"/ron1-q4-part-*; do
+            suffix="\${part##*-}"
+            cp "$part" "site/weights/ron1-q4-\${suffix}.bin"
+            cp "$part" "weights/ron1-q4-\${suffix}.bin"
+          done
+          python - <<'PY'
+          import json, re
+          from pathlib import Path
+          files = sorted(p for p in Path("weights").glob("ron1-q4-*.bin") if re.fullmatch(r"ron1-q4-\d{2}\.bin", p.name))
+          if len(files) < 2:
+              raise SystemExit("Expected at least two Q4 shards")
+          manifest = {"format": "onnx-q4-shards-v1", "totalBytes": sum(p.stat().st_size for p in files),
+                      "chunks": [{"file": p.name, "size": p.stat().st_size} for p in files]}
+          if manifest["totalBytes"] < 1000000:
+              raise SystemExit("Q4 model artifact is unexpectedly small")
+          for destination in (Path("weights/ron1-q4-manifest.json"), Path("site/weights/ron1-q4-manifest.json")):
+              destination.write_text(json.dumps(manifest, separators=(",", ":")) + "\n", encoding="utf-8")
+          print(json.dumps(manifest))
+          PY
+          git add weights/ron1-q4-*.bin weights/ron1-q4-manifest.json
           if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "Add same-origin Q4 chunks for Ron-1 WASM core"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
+            git commit -m "Bundle Q4 model shards for Ron-1 WASM core"
+            git push origin "HEAD:\${GITHUB_REF_NAME}"
           fi
 
       - name: Configure GitHub Pages
