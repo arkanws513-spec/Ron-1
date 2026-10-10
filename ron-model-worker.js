@@ -16,16 +16,19 @@ try { env.backends.onnx.logLevel = "verbose"; } catch {}
 const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
 const GITHUB_Q4_WEIGHTS_URL = "https://github.com/arkanws513-spec/Ron-1/releases/download/ron1-smollm2-135m-q4-v1/Ron-1-Smollm2-135M-Instruct-Q4.onnx";
 const originalFetch = globalThis.fetch.bind(globalThis);
-
-// Redirect only the expected Q4 model file to the copy hosted in Ron-1's GitHub Release.
-// Leave the browser's normal fetch handling intact for WASM/runtime internals.
-globalThis.fetch = (input, init) => {
+// Transformers.js captures env.fetch when its module is imported, so changing only
+// globalThis.fetch is insufficient. Preserve the library fetch for every normal asset,
+// and redirect only the one Q4 weights path to Ron-1's GitHub Release.
+const originalEnvFetch = typeof env.fetch === "function" ? env.fetch.bind(env) : originalFetch;
+function ronFetch(input, init, fallback) {
   const requestUrl = typeof input === "string" || input instanceof URL ? String(input) : input?.url;
   if (requestUrl && requestUrl.includes("/models/onnx-community/SmolLM2-135M-Instruct-ONNX/onnx/model_q4.onnx")) {
-    return originalFetch(GITHUB_Q4_WEIGHTS_URL, init);
+    return fallback(GITHUB_Q4_WEIGHTS_URL, init);
   }
-  return originalFetch(input, init);
-};
+  return fallback(input, init);
+}
+globalThis.fetch = (input, init) => ronFetch(input, init, originalFetch);
+env.fetch = (input, init) => ronFetch(input, init, originalEnvFetch);
 
 let tokenizer = null;
 let model = null;
