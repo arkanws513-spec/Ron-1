@@ -21,7 +21,7 @@
 </div>
 <form id="form"><input id="msg" autocomplete="off" maxlength="4000" placeholder="اكتب رسالتك إلى رون…" aria-label="رسالتك"><button id="send" type="submit" disabled>إرسال</button></form>
 <div class="note" id="status">النموذج لم يُحمّل بعد. بعد التحميل، تُولَّد الردود على جهازك ولا تُرسل المحادثة إلى خادم استدلال.</div>
-<div class="note">النموذج الأساسي مفتوح الأوزان: <a href="https://huggingface.co/onnx-community/SmolLM2-135M-Instruct-ONNX" target="_blank" rel="noreferrer">SmolLM2-135M-Instruct</a>. حجم ملف الأوزان نحو 181 ميجابايت بصيغة WASM Q4؛ جودة الإجابات وسرعتها تعتمد على جهازك ومتصفحك.</div>
+<div class="note">الأوزان بصيغة Q4 مستضافة في <a href="https://github.com/arkanws513-spec/Ron-1/releases/tag/ron1-smollm2-135m-q4-v1" target="_blank" rel="noreferrer">GitHub Releases الخاص برون-1</a>، بينما ملفات الإعداد والمفردات تأتي من <a href="https://huggingface.co/onnx-community/SmolLM2-135M-Instruct-ONNX" target="_blank" rel="noreferrer">مستودع النموذج الأصلي</a>. حجم الأوزان نحو 181 ميجابايت؛ جودة الإجابات وسرعتها تعتمد على جهازك ومتصفحك.</div>
 </main>
 <script>
 const chat=document.querySelector('#chat'),input=document.querySelector('#msg'),send=document.querySelector('#send'),status=document.querySelector('#status'),form=document.querySelector('#form'),loadButton=document.querySelector('#load'),clearButton=document.querySelector('#clear');
