@@ -17,7 +17,7 @@ self.onmessage = async (event) => {
     loading = true;
     const hasWebGPU = typeof navigator !== "undefined" && !!navigator.gpu;
     const attempts = hasWebGPU
-      ? [{ device: "webgpu", dtype: "q4", label: "معالج الرسوميات" }, { device: "wasm", dtype: "q4", label: "معالج الجهاز" }]
+      ? [{ device: "webgpu", dtype: "q4f16", label: "معالج الرسوميات" }, { device: "wasm", dtype: "q4", label: "معالج الجهاز" }]
       : [{ device: "wasm", dtype: "q4", label: "معالج الجهاز" }];
     let lastError = null;
 
