@@ -34,7 +34,7 @@ def main():
     if length < 2: raise SystemExit("Training corpus is too short.")
     model.train()
     for step in range(start,start+a.steps):
-        starts=torch.randint(0,data.numel()-length-1,(a.batch_size,))
+        starts=torch.randint(0,data.numel()-length,(a.batch_size,))
         x=torch.stack([data[int(s):int(s)+length] for s in starts])
         y=torch.stack([data[int(s)+1:int(s)+length+1] for s in starts])
         _,loss=model(x,y); opt.zero_grad(set_to_none=True); loss.backward()
