@@ -64,6 +64,15 @@ Before a public production launch:
 - Confirm the selected host has sufficient memory, disk space, and CPU/GPU resources for Qwen3-1.7B.
 - Add a project-code license only after choosing the intended license for Ron-1's own code; the base model's license does not automatically license all project code.
 
+
+## Current hosting status
+
+- The static GitHub Pages interface is published at https://arkanws513-spec.github.io/Ron-1/.
+- GitHub Pages cannot execute the Python/Qwen model. The chat interface needs the Ron-1 Space backend to be running.
+- The latest recorded Hugging Face deployment failed because the account reached its `cpu-basic` quota. Changing Python files alone cannot remove an account-level hosting quota.
+- The Hugging Face deployment workflow is now manual-only and uploads only Ron-1 files; it no longer deletes other Hugging Face repositories or repeatedly restarts the Space on every push.
+- To try deployment again, first resolve the Hugging Face CPU quota in the account, then run **Actions → Deploy Ron-1 to Hugging Face Space → Run workflow**. A successful upload does not guarantee the Space will start until the quota issue is resolved.
+
 ## Project structure
 
 - `app.py` — Gradio chat interface.
