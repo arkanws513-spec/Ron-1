@@ -18,16 +18,29 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.pathname.endsWith("/sw.js")) return;
 
+  const isAppShell = request.mode === "navigate" || /\/(?:index\.html|ron-model-worker\.js)$/.test(url.pathname);
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
+    if (isAppShell) {
+      // Keep the interface and worker updatable; use their cached copy only when offline.
+      try {
+        const fresh = await fetch(request);
+        if (fresh.ok) event.waitUntil(cache.put(request, fresh.clone()).catch(() => undefined));
+        return fresh;
+      } catch (error) {
+        const cachedShell = await cache.match(request);
+        if (cachedShell) return cachedShell;
+        throw error;
+      }
+    }
+
+    // Heavy, versioned runtime/model assets use cache-first to support repeat and offline loads.
     const cached = await cache.match(request);
     if (cached) return cached;
-
     const response = await fetch(request);
     if (response.ok && response.type !== "opaque" && request.headers.get("range") === null) {
-      const isAppAsset = request.mode === "navigate"
-        || /\/(?:index\.html|ron-model-worker\.js|vendor\/transformers\/|models-v2?\/|weights\/ron1-q4f16-\d+\.bin)/.test(url.pathname);
-      if (isAppAsset) {
+      const isRuntimeAsset = /\/(?:vendor\/transformers\/|models-v2?\/|weights\/ron1-q4f16-\d+\.bin)/.test(url.pathname);
+      if (isRuntimeAsset) {
         // Large weight chunks may exceed a device's storage quota. Cache failures must never break inference.
         event.waitUntil(cache.put(request, response.clone()).catch(() => undefined));
       }
