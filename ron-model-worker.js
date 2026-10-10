@@ -31,8 +31,8 @@ async function fetchQ4FromPages(init) {
         while (true) {
           if (!reader) {
             if (chunkIndex >= Q4_CHUNKS.length) {
-              if (totalBytes !== Q4_EXPECTED_BYTES) {
-                controller.error(new Error("Incomplete Ron-1 Q4 model: expected " + Q4_EXPECTED_BYTES + " bytes, received " + totalBytes));
+              if (totalBytes < Q4_MIN_EXPECTED_BYTES) {
+                controller.error(new Error("Incomplete Ron-1 Q4 model: expected at least " + Q4_MIN_EXPECTED_BYTES + " bytes, received " + totalBytes));
               } else {
                 controller.close();
               }
@@ -64,14 +64,13 @@ async function fetchQ4FromPages(init) {
     status: 200,
     headers: {
       "Content-Type": "application/octet-stream",
-      "Content-Length": String(Q4_EXPECTED_BYTES),
       "Accept-Ranges": "bytes"
     }
   });
 }
 const originalFetch = globalThis.fetch.bind(globalThis);
 // Transformers.js captures env.fetch at import time. Override both fetch entry points.
-// The canonical Q4 asset remains in Ron-1's GitHub Release. Browser-safe chunks are
+// The canonical Q4 asset is built into Ron-1's published site bundle. Browser-safe chunks are
 // served same-origin from Pages to avoid release CORS failures.
 const originalEnvFetch = typeof env.fetch === "function" ? env.fetch.bind(env) : originalFetch;
 function ronFetch(input, init, fallback) {
@@ -144,7 +143,7 @@ self.onmessage = async (event) => {
       });
       loadingStage = "ONNX model/session initialization";
       const loadedModel = await AutoModelForCausalLM.from_pretrained(MODEL_ID, {
-        device: "wasm", dtype: "q4f16",
+        device: "wasm", dtype: "q4",
         progress_callback: (info) => { if (info && info.status) self.postMessage({ type: "progress", info }); },
       });
       loadingStage = "finalizing model";
