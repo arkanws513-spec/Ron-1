@@ -34,5 +34,8 @@ assert.match(worker, /max_new_tokens: 80/);
 assert.match(worker, /type: "ready"/);
 assert.match(worker, /type: "answer"/);
 assert.match(html, /ron-model-worker\.js/);
+assert.match(html, /function maybeAutoLoad\(\)\{startWorker\(\);/);
+assert.match(html, /يجري تشغيل نواة رون تلقائيًا/);
+assert.match(html, /<button id="load" type="button" hidden>إعادة تشغيل النواة<\/button>/);
 assert.match(pages, /EXPECTED_SHA256="662d0a9d8d5d56e3746a5bf3b3ede96bd2d4d3594d9b2e282baebd4f34cf3589"/);
 console.log("Ron-1 runtime contract and model asset checks passed.");
