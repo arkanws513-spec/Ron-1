@@ -14,15 +14,28 @@ env.backends.onnx.wasm.proxy = false;
 try { env.backends.onnx.logLevel = "verbose"; } catch {}
 
 const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
-const Q4F16_CHUNKS = [
-  new URL("./weights/ron1-q4f16-00.bin", self.location.href).href,
-  new URL("./weights/ron1-q4f16-01.bin", self.location.href).href,
-  new URL("./weights/ron1-q4f16-02.bin", self.location.href).href,
-];
-const Q4F16_EXPECTED_BYTES = 117266133;
-async function fetchQ4F16FromPages(init) {
-  // Stream same-origin chunks sequentially: no cross-origin Release fetch and no extra 117 MB Blob copy.
+async function fetchQ4FromPages(init) {
+  // The manifest and every binary shard are deployed with Ron-1 on the same origin.
+  const manifestUrl = new URL("./weights/ron1-q4-manifest.json", self.location.href);
+  const manifestResponse = await originalFetch(manifestUrl, { signal: init?.signal });
+  if (!manifestResponse.ok) throw new Error("Failed to load Ron-1 Q4 manifest: HTTP " + manifestResponse.status);
+  const manifest = await manifestResponse.json();
+  if (!Array.isArray(manifest.chunks) || !Number.isSafeInteger(manifest.totalBytes) || manifest.totalBytes < 1000000) {
+    throw new Error("Invalid Ron-1 Q4 manifest");
+  }
+  const chunks = manifest.chunks.map((item) => {
+    if (!item || !/^ron1-q4-\d{2}\.bin$/.test(item.file) || !Number.isSafeInteger(item.size) || item.size <= 0) {
+      throw new Error("Invalid entry in Ron-1 Q4 manifest");
+    }
+    return { url: new URL("./weights/" + item.file, self.location.href).href, size: item.size };
+  });
+  if (chunks.reduce((sum, item) => sum + item.size, 0) !== manifest.totalBytes) {
+    throw new Error("Ron-1 Q4 manifest size mismatch");
+  }
+
   let chunkIndex = 0;
+  let currentChunk = null;
+  let currentChunkBytes = 0;
   let reader = null;
   let totalBytes = 0;
   const body = new ReadableStream({
@@ -30,24 +43,31 @@ async function fetchQ4F16FromPages(init) {
       try {
         while (true) {
           if (!reader) {
-            if (chunkIndex >= Q4F16_CHUNKS.length) {
-              if (totalBytes !== Q4F16_EXPECTED_BYTES) {
-                controller.error(new Error("Incomplete Ron-1 Q4F16 model: expected " + Q4F16_EXPECTED_BYTES + " bytes, received " + totalBytes));
+            if (chunkIndex >= chunks.length) {
+              if (totalBytes !== manifest.totalBytes) {
+                controller.error(new Error("Incomplete Ron-1 Q4 model: expected " + manifest.totalBytes + " bytes, received " + totalBytes));
               } else {
                 controller.close();
               }
               return;
             }
-            const response = await originalFetch(Q4F16_CHUNKS[chunkIndex++], { signal: init?.signal });
-            if (!response.ok) throw new Error("Failed to fetch a Ron-1 Q4F16 chunk: HTTP " + response.status);
-            if (!response.body) throw new Error("Ron-1 Q4F16 chunk has no readable response body");
+            currentChunk = chunks[chunkIndex++];
+            currentChunkBytes = 0;
+            const response = await originalFetch(currentChunk.url, { signal: init?.signal });
+            if (!response.ok) throw new Error("Failed to fetch a Ron-1 Q4 chunk: HTTP " + response.status);
+            if (!response.body) throw new Error("Ron-1 Q4 chunk has no readable response body");
             reader = response.body.getReader();
           }
           const part = await reader.read();
           if (part.done) {
+            if (currentChunkBytes !== currentChunk.size) {
+              throw new Error("Incomplete Ron-1 Q4 chunk: expected " + currentChunk.size + " bytes, received " + currentChunkBytes);
+            }
             reader = null;
+            currentChunk = null;
             continue;
           }
+          currentChunkBytes += part.value.byteLength;
           totalBytes += part.value.byteLength;
           controller.enqueue(part.value);
           return;
@@ -64,20 +84,19 @@ async function fetchQ4F16FromPages(init) {
     status: 200,
     headers: {
       "Content-Type": "application/octet-stream",
-      "Content-Length": String(Q4F16_EXPECTED_BYTES),
       "Accept-Ranges": "bytes"
     }
   });
 }
 const originalFetch = globalThis.fetch.bind(globalThis);
 // Transformers.js captures env.fetch at import time. Override both fetch entry points.
-// The canonical Q4F16 asset remains in Ron-1's GitHub Release. Browser-safe chunks are
+// The canonical Q4 asset is built into Ron-1's published site bundle. Browser-safe chunks are
 // served same-origin from Pages to avoid release CORS failures.
 const originalEnvFetch = typeof env.fetch === "function" ? env.fetch.bind(env) : originalFetch;
 function ronFetch(input, init, fallback) {
   const requestUrl = typeof input === "string" || input instanceof URL ? String(input) : input?.url;
-  if (requestUrl && requestUrl.includes("SmolLM2-135M-Instruct-ONNX") && requestUrl.includes("onnx/model_q4f16.onnx")) {
-    return fetchQ4F16FromPages(init);
+  if (requestUrl && requestUrl.includes("SmolLM2-135M-Instruct-ONNX") && requestUrl.includes("onnx/model_q4.onnx")) {
+    return fetchQ4FromPages(init);
   }
   if (requestUrl) {
     if (requestUrl.startsWith("blob:") || requestUrl.startsWith("data:")) return fallback(input, init);
@@ -138,13 +157,13 @@ self.onmessage = async (event) => {
     loadingStage = "tokenizer";
     beginRuntimeDiagnostics();
     try {
-      self.postMessage({ type: "status", text: "جاري تشغيل نواة Ron-1 المبنية على SmolLM2-135M بصيغة Q4F16. سيُعاد استخدام الملفات المخزنة في المتصفح متى أمكن، وقد يلزم تنزيلها إذا لم تكن متاحة محليًا." });
+      self.postMessage({ type: "status", text: "جاري تشغيل نواة Ron-1 المبنية على SmolLM2-135M بصيغة Q4. سيُعاد استخدام الملفات المخزنة في المتصفح متى أمكن، وقد يلزم تنزيلها إذا لم تكن متاحة محليًا." });
       const loadedTokenizer = await AutoTokenizer.from_pretrained(MODEL_ID, {
         progress_callback: (info) => { if (info && info.status) self.postMessage({ type: "progress", info }); },
       });
       loadingStage = "ONNX model/session initialization";
       const loadedModel = await AutoModelForCausalLM.from_pretrained(MODEL_ID, {
-        device: "wasm", dtype: "q4f16",
+        device: "wasm", dtype: "q4",
         progress_callback: (info) => { if (info && info.status) self.postMessage({ type: "progress", info }); },
       });
       loadingStage = "finalizing model";

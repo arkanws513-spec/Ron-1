@@ -12,24 +12,19 @@ for (const file of [
   "quantize_config.json", "special_tokens_map.json", "tokenizer.json",
   "tokenizer_config.json", "vocab.json"
 ]) {
-  assert.ok(statSync(modelDir + file).size > 0, `missing model metadata: ${file}`);
+  assert.ok(statSync(modelDir + file).size > 0, "missing model metadata: " + file);
 }
-
-const chunks = [
-  ["weights/ron1-q4f16-00.bin", 40000000],
-  ["weights/ron1-q4f16-01.bin", 40000000],
-  ["weights/ron1-q4f16-02.bin", 37266133],
-];
-for (const [path, expected] of chunks) {
-  assert.equal(statSync(path).size, expected, `unexpected model chunk size: ${path}`);
-}
-assert.equal(chunks.reduce((sum, [, size]) => sum + size, 0), 117266133);
-const q4f16Config = JSON.parse(readFileSync(modelDirV2 + "config.json", "utf8"));
-assert.equal(q4f16Config["transformers.js_config"].kv_cache_dtype.q4f16, "float32");
+const modelConfig = JSON.parse(readFileSync(modelDirV2 + "config.json", "utf8"));
+assert.equal(modelConfig["transformers.js_config"].kv_cache_dtype.q4, "float32");
+assert.equal(modelConfig["transformers.js_config"].kv_cache_dtype.q4f16, undefined);
 
 assert.match(worker, /AutoTokenizer\.from_pretrained\(MODEL_ID/);
 assert.match(worker, /AutoModelForCausalLM\.from_pretrained\(MODEL_ID/);
 assert.match(worker, /type === "generate"/);
+assert.match(worker, /dtype: "q4"/);
+assert.match(worker, /onnx\/model_q4\.onnx/);
+assert.match(worker, /ron1-q4-manifest\.json/);
+assert.match(worker, /Incomplete Ron-1 Q4 chunk/);
 assert.match(worker, /max_new_tokens: 80/);
 assert.match(worker, /type: "ready"/);
 assert.match(worker, /type: "answer"/);
@@ -37,7 +32,10 @@ assert.match(html, /ron-model-worker\.js/);
 assert.ok(html.includes("async function maybeAutoLoad()"));
 assert.match(html, /يجري تشغيل نواة رون تلقائيًا/);
 assert.match(html, /<button id="load" type="button" hidden>إعادة تشغيل النواة<\/button>/);
-assert.match(pages, /EXPECTED_SHA256="662d0a9d8d5d56e3746a5bf3b3ede96bd2d4d3594d9b2e282baebd4f34cf3589"/);
+assert.match(pages, /onnx\/model_q4\.onnx/);
+assert.match(pages, /ron1-q4-manifest\.json/);
+assert.match(pages, /split -b 40000000/);
+assert.match(pages, /Q4 model artifact is unexpectedly small/);
 const serviceWorker = readFileSync("sw.js", "utf8");
 assert.match(worker, /use_cache: false/);
 assert.match(worker, /generation_reset/);
@@ -48,5 +46,6 @@ assert.ok(serviceWorker.includes("caches.open"));
 assert.ok(serviceWorker.includes("cache.put"));
 assert.match(serviceWorker, /if \(isAppShell\)/);
 assert.match(serviceWorker, /const cached = await cache\.match\(request\)/);
+assert.match(serviceWorker, /ron1-q4-manifest/);
 assert.ok(pages.includes("cp index.html ron-model-worker.js sw.js site/"));
-console.log("Ron-1 runtime contract and model asset checks passed.");
+console.log("Ron-1 Q4/WASM core contract and model asset checks passed.");

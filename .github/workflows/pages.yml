@@ -22,25 +22,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Ensure low-memory Q4F16 model asset exists in Ron-1 Release
+      - name: Download Q4 ONNX weights for WASM-compatible inference
         shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          TAG="ron1-smollm2-135m-q4-v1"
-          ASSET="Ron-1-Smollm2-135M-Instruct-Q4F16.onnx"
-          EXPECTED_SHA256="662d0a9d8d5d56e3746a5bf3b3ede96bd2d4d3594d9b2e282baebd4f34cf3589"
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | grep -Fxq "$ASSET"; then
-            echo "Q4F16 asset already exists in Ron-1 Release."
-          else
-            echo "Downloading the smaller official Q4F16 ONNX build during deployment setup (never from the user's browser)."
-            curl --fail --location --retry 3 --retry-all-errors \
-              "https://huggingface.co/onnx-community/SmolLM2-135M-Instruct-ONNX/resolve/main/onnx/model_q4f16.onnx?download=true" \
-              --output "$RUNNER_TEMP/$ASSET"
-            echo "$EXPECTED_SHA256  $RUNNER_TEMP/$ASSET" | sha256sum --check -
-            gh release upload "$TAG" "$RUNNER_TEMP/$ASSET" --repo "$GITHUB_REPOSITORY"
-          fi
+          ASSET="$RUNNER_TEMP/Ron-1-Smollm2-135M-Instruct-Q4.onnx"
+          echo "Downloading the Q4 ONNX artifact during CI; browsers will use only same-origin Ron-1 files."
+          curl --fail --location --retry 3 --retry-all-errors \
+            "https://huggingface.co/onnx-community/SmolLM2-135M-Instruct-ONNX/resolve/main/onnx/model_q4.onnx?download=true" \
+            --output "$ASSET"
+          test -s "$ASSET"
+          BYTES="$(stat -c %s "$ASSET")"
+          test "$BYTES" -gt 1000000
+          echo "Q4 model bytes: $BYTES"
+          sha256sum "$ASSET"
 
       - name: Prepare GitHub-hosted runtime assets
         shell: bash
@@ -73,37 +68,38 @@ jobs:
           cp index.html ron-model-worker.js sw.js site/
           cp -R vendor models models-v2 site/
 
-      - name: Prepare same-origin Q4F16 chunks for browser CORS and low-memory devices
+      - name: Prepare same-origin Q4 shards and manifest for Ron-1 core
         shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          TAG="ron1-smollm2-135m-q4-v1"
-          ASSET="Ron-1-Smollm2-135M-Instruct-Q4F16.onnx"
-          EXPECTED_SHA256="662d0a9d8d5d56e3746a5bf3b3ede96bd2d4d3594d9b2e282baebd4f34cf3589"
-          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$ASSET" --dir "$RUNNER_TEMP"
-          echo "$EXPECTED_SHA256  $RUNNER_TEMP/$ASSET" | sha256sum --check -
-          split -b 40000000 --numeric-suffixes=0 --suffix-length=2 "$RUNNER_TEMP/$ASSET" "$RUNNER_TEMP/ron1-q4f16-part-"
-          test "$(stat -c %s "$RUNNER_TEMP/ron1-q4f16-part-00")" = "40000000"
-          test "$(stat -c %s "$RUNNER_TEMP/ron1-q4f16-part-01")" = "40000000"
-          test "$(stat -c %s "$RUNNER_TEMP/ron1-q4f16-part-02")" = "37266133"
-          mkdir -p site/weights
-          cp "$RUNNER_TEMP/ron1-q4f16-part-00" site/weights/ron1-q4f16-00.bin
-          cp "$RUNNER_TEMP/ron1-q4f16-part-01" site/weights/ron1-q4f16-01.bin
-          cp "$RUNNER_TEMP/ron1-q4f16-part-02" site/weights/ron1-q4f16-02.bin
-
-          # Also keep the split files in the repository root so the default GitHub Pages
-          # branch publisher serves them even if it races the custom artifact deployment.
-          mkdir -p weights
-          cp "$RUNNER_TEMP/ron1-q4f16-part-00" weights/ron1-q4f16-00.bin
-          cp "$RUNNER_TEMP/ron1-q4f16-part-01" weights/ron1-q4f16-01.bin
-          cp "$RUNNER_TEMP/ron1-q4f16-part-02" weights/ron1-q4f16-02.bin
-          git add weights/ron1-q4f16-00.bin weights/ron1-q4f16-01.bin weights/ron1-q4f16-02.bin
+          ASSET="$RUNNER_TEMP/Ron-1-Smollm2-135M-Instruct-Q4.onnx"
+          test -s "$ASSET"
+          split -b 40000000 --numeric-suffixes=0 --suffix-length=2 "$ASSET" "$RUNNER_TEMP/ron1-q4-part-"
+          mkdir -p site/weights weights
+          for part in "$RUNNER_TEMP"/ron1-q4-part-*; do
+            suffix="${part##*-}"
+            cp "$part" "site/weights/ron1-q4-${suffix}.bin"
+            cp "$part" "weights/ron1-q4-${suffix}.bin"
+          done
+          python - <<'PY'
+          import json, re
+          from pathlib import Path
+          files = sorted(p for p in Path("weights").glob("ron1-q4-*.bin") if re.fullmatch(r"ron1-q4-\d{2}\.bin", p.name))
+          if len(files) < 2:
+              raise SystemExit("Expected at least two Q4 shards")
+          manifest = {"format": "onnx-q4-shards-v1", "totalBytes": sum(p.stat().st_size for p in files),
+                      "chunks": [{"file": p.name, "size": p.stat().st_size} for p in files]}
+          if manifest["totalBytes"] < 1000000:
+              raise SystemExit("Q4 model artifact is unexpectedly small")
+          for destination in (Path("weights/ron1-q4-manifest.json"), Path("site/weights/ron1-q4-manifest.json")):
+              destination.write_text(json.dumps(manifest, separators=(",", ":")) + "\n", encoding="utf-8")
+          print(json.dumps(manifest))
+          PY
+          git add weights/ron1-q4-*.bin weights/ron1-q4-manifest.json
           if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "Add same-origin Q4F16 chunks for GitHub Pages"
+            git commit -m "Bundle Q4 model shards for Ron-1 WASM core"
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
 

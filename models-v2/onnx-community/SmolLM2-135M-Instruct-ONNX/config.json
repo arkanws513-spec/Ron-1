@@ -31,7 +31,7 @@
   "transformers.js_config": {
     "kv_cache_dtype": {
       "fp16": "float16",
-      "q4f16": "float32"
+      "q4": "float32"
     }
   },
   "transformers_version": "4.49.0",
