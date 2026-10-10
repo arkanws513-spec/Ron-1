@@ -22,6 +22,26 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Ensure low-memory Q4F16 model asset exists in Ron-1 Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="ron1-smollm2-135m-q4-v1"
+          ASSET="Ron-1-Smollm2-135M-Instruct-Q4F16.onnx"
+          EXPECTED_SHA256="662d0a9d8d5d56e3746a5bf3b3ede96bd2d4d3594d9b2e282baebd4f34cf3589"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | grep -Fxq "$ASSET"; then
+            echo "Q4F16 asset already exists in Ron-1 Release."
+          else
+            echo "Downloading the smaller official Q4F16 ONNX build during deployment setup (never from the user's browser)."
+            curl --fail --location --retry 3 --retry-all-errors \
+              "https://huggingface.co/onnx-community/SmolLM2-135M-Instruct-ONNX/resolve/main/onnx/model_q4f16.onnx?download=true" \
+              --output "$RUNNER_TEMP/$ASSET"
+            echo "$EXPECTED_SHA256  $RUNNER_TEMP/$ASSET" | sha256sum --check -
+            gh release upload "$TAG" "$RUNNER_TEMP/$ASSET" --repo "$GITHUB_REPOSITORY"
+          fi
+
       - name: Prepare GitHub-hosted runtime assets
         shell: bash
         run: |

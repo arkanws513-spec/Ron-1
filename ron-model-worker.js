@@ -14,16 +14,16 @@ env.backends.onnx.wasm.proxy = false;
 try { env.backends.onnx.logLevel = "verbose"; } catch {}
 
 const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
-const GITHUB_Q4_WEIGHTS_URL = "https://github.com/arkanws513-spec/Ron-1/releases/download/ron1-smollm2-135m-q4-v1/Ron-1-Smollm2-135M-Instruct-Q4.onnx";
+const GITHUB_Q4F16_WEIGHTS_URL = "https://github.com/arkanws513-spec/Ron-1/releases/download/ron1-smollm2-135m-q4-v1/Ron-1-Smollm2-135M-Instruct-Q4F16.onnx";
 const originalFetch = globalThis.fetch.bind(globalThis);
 // Transformers.js captures env.fetch at import time. Override both fetch entry points.
-// Only the exact Q4 weights file may leave GitHub Pages, and it is redirected to Ron-1's
+// Only the exact Q4F16 weights file may leave GitHub Pages, and it is redirected to Ron-1's
 // GitHub Release. Every other request must remain same-origin (or be a local blob/data URL).
 const originalEnvFetch = typeof env.fetch === "function" ? env.fetch.bind(env) : originalFetch;
 function ronFetch(input, init, fallback) {
   const requestUrl = typeof input === "string" || input instanceof URL ? String(input) : input?.url;
-  if (requestUrl && requestUrl.includes("SmolLM2-135M-Instruct-ONNX") && requestUrl.includes("onnx/model_q4.onnx")) {
-    return fallback(GITHUB_Q4_WEIGHTS_URL, init);
+  if (requestUrl && requestUrl.includes("SmolLM2-135M-Instruct-ONNX") && requestUrl.includes("onnx/model_q4f16.onnx")) {
+    return fallback(GITHUB_Q4F16_WEIGHTS_URL, init);
   }
   if (requestUrl) {
     if (requestUrl.startsWith("blob:") || requestUrl.startsWith("data:")) return fallback(input, init);
@@ -90,7 +90,7 @@ self.onmessage = async (event) => {
       });
       loadingStage = "ONNX model/session initialization";
       const loadedModel = await AutoModelForCausalLM.from_pretrained(MODEL_ID, {
-        device: "wasm", dtype: "q4",
+        device: "wasm", dtype: "q4f16",
         progress_callback: (info) => { if (info && info.status) self.postMessage({ type: "progress", info }); },
       });
       loadingStage = "finalizing model";

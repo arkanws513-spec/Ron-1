@@ -20,8 +20,8 @@
   <button id="clear" class="secondary" type="button">محادثة جديدة</button>
 </div>
 <form id="form"><input id="msg" autocomplete="off" maxlength="4000" placeholder="اكتب رسالتك إلى رون…" aria-label="رسالتك"><button id="send" type="submit" disabled>إرسال</button></form>
-<div class="note" id="status">نواة Ron-1 تستخدم SmolLM2-135M-Instruct Q4. تُولَّد الردود على جهازك ولا تُرسل المحادثة إلى خادم استدلال؛ يعاد استخدام الملفات المخزنة في المتصفح متى أمكن.</div>
-<div class="note">كل ملفات التشغيل والإعداد والمفردات مستضافة على GitHub Pages الخاص برون-1، والأوزان الكبيرة بصيغة Q4 موجودة في <a href="https://github.com/arkanws513-spec/Ron-1/releases/tag/ron1-smollm2-135m-q4-v1" target="_blank" rel="noreferrer">GitHub Releases</a>. حجم الأوزان نحو 181 ميجابايت؛ قد يلزم تنزيلها أول مرة، ثم يحاول المتصفح إعادة استخدام النسخة المخزنة. لا يعتمد تشغيل المحادثة على CDN أو مستودع نموذج خارجي.</div>
+<div class="note" id="status">نواة Ron-1 تستخدم SmolLM2-135M-Instruct Q4F16. تُولَّد الردود على جهازك ولا تُرسل المحادثة إلى خادم استدلال؛ يعاد استخدام الملفات المخزنة في المتصفح متى أمكن.</div>
+<div class="note">كل ملفات التشغيل والإعداد والمفردات مستضافة على GitHub Pages الخاص برون-1، والأوزان الكبيرة بصيغة Q4 موجودة في <a href="https://github.com/arkanws513-spec/Ron-1/releases/tag/ron1-smollm2-135m-q4-v1" target="_blank" rel="noreferrer">GitHub Releases</a>. حجم الأوزان نحو 117 ميجابايت؛ قد يلزم تنزيلها أول مرة، ثم يحاول المتصفح إعادة استخدام النسخة المخزنة. لا يعتمد تشغيل المحادثة على CDN أو مستودع نموذج خارجي.</div>
 </main>
 <script>
 const chat=document.querySelector('#chat'),input=document.querySelector('#msg'),send=document.querySelector('#send'),status=document.querySelector('#status'),form=document.querySelector('#form'),loadButton=document.querySelector('#load'),clearButton=document.querySelector('#clear');
