@@ -41,4 +41,4 @@ python core/generate.py --prompt "اكتب تعريفًا بنفسك"
 - Next-token cross-entropy objective and autoregressive generation.
 - Small development configuration; not yet a production-quality LLM.
 
-This is the first native-core implementation. The existing public website still uses the previous SmolLM2 runtime and has not been migrated to this core.
+This is the first native-core implementation. The public interface is being migrated to a separate native inference API; the API refuses to answer until a trained native checkpoint is provided. It never falls back to SmolLM2.
