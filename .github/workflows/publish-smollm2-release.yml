@@ -1,0 +1,31 @@
+name: Publish SmolLM2 Q4 weights release
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type PUBLISH-SMOLLM2-Q4 to download and publish the model weights
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish-model:
+    if: inputs.confirm == 'PUBLISH-SMOLLM2-Q4'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Hugging Face downloader
+        run: python -m pip install --upgrade huggingface_hub
+
+      - name: Download Q4 ONNX weights
+        run: |
+          hf download onnx-community/SmolLM2-135M-Instruct-ONNX onnx/model_q4.onnx --local-dir ./download
+          cp ./download/onnx/model_q4.onnx ./Ron-1-Sm olLM2-135M-Instruct-Q4.onnx
