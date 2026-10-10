@@ -13,5 +13,7 @@ jobs:
         run: node --input-type=module --check < ron-model-worker.js
       - name: Check required browser app files
         run: test -s index.html && test -s ron-model-worker.js && grep -q 'SmolLM2-135M-Instruct-ONNX' ron-model-worker.js
+      - name: Check model assets and inference contract
+        run: node scripts/check-runtime.mjs
       - name: Check patch whitespace
         run: git diff --check

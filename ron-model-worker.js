@@ -181,7 +181,7 @@ self.onmessage = async (event) => {
         },
       });
       // Short, deterministic generations are more responsive on low-memory mobile CPUs.
-      const output = await model.generate({ ...inputs, max_new_tokens: 40, do_sample: false, repetition_penalty: 1.08, streamer });
+      const output = await model.generate({ ...inputs, max_new_tokens: 80, do_sample: false, repetition_penalty: 1.08, streamer });
       const allTokens = output?.tolist?.()[0] || [];
       const inputLength = inputs?.input_ids?.dims?.[1] || 0;
       const answer = tokenizer.decode(allTokens.slice(inputLength), { skip_special_tokens: true }).trim();
