@@ -14,13 +14,13 @@ env.backends.onnx.wasm.proxy = false;
 try { env.backends.onnx.logLevel = "verbose"; } catch {}
 
 const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
-const Q4F16_CHUNKS = [
-  new URL("./weights/ron1-q4f16-00.bin", self.location.href).href,
-  new URL("./weights/ron1-q4f16-01.bin", self.location.href).href,
-  new URL("./weights/ron1-q4f16-02.bin", self.location.href).href,
+const Q4_CHUNKS = [
+  new URL("./weights/ron1-q4-00.bin", self.location.href).href,
+  new URL("./weights/ron1-q4-01.bin", self.location.href).href,
+  new URL("./weights/ron1-q4-02.bin", self.location.href).href,
 ];
-const Q4F16_EXPECTED_BYTES = 117266133;
-async function fetchQ4F16FromPages(init) {
+const Q4_MIN_EXPECTED_BYTES = 1000000;
+async function fetchQ4FromPages(init) {
   // Stream same-origin chunks sequentially: no cross-origin Release fetch and no extra 117 MB Blob copy.
   let chunkIndex = 0;
   let reader = null;
@@ -30,17 +30,17 @@ async function fetchQ4F16FromPages(init) {
       try {
         while (true) {
           if (!reader) {
-            if (chunkIndex >= Q4F16_CHUNKS.length) {
-              if (totalBytes !== Q4F16_EXPECTED_BYTES) {
-                controller.error(new Error("Incomplete Ron-1 Q4F16 model: expected " + Q4F16_EXPECTED_BYTES + " bytes, received " + totalBytes));
+            if (chunkIndex >= Q4_CHUNKS.length) {
+              if (totalBytes !== Q4_EXPECTED_BYTES) {
+                controller.error(new Error("Incomplete Ron-1 Q4 model: expected " + Q4_EXPECTED_BYTES + " bytes, received " + totalBytes));
               } else {
                 controller.close();
               }
               return;
             }
-            const response = await originalFetch(Q4F16_CHUNKS[chunkIndex++], { signal: init?.signal });
-            if (!response.ok) throw new Error("Failed to fetch a Ron-1 Q4F16 chunk: HTTP " + response.status);
-            if (!response.body) throw new Error("Ron-1 Q4F16 chunk has no readable response body");
+            const response = await originalFetch(Q4_CHUNKS[chunkIndex++], { signal: init?.signal });
+            if (!response.ok) throw new Error("Failed to fetch a Ron-1 Q4 chunk: HTTP " + response.status);
+            if (!response.body) throw new Error("Ron-1 Q4 chunk has no readable response body");
             reader = response.body.getReader();
           }
           const part = await reader.read();
@@ -64,20 +64,20 @@ async function fetchQ4F16FromPages(init) {
     status: 200,
     headers: {
       "Content-Type": "application/octet-stream",
-      "Content-Length": String(Q4F16_EXPECTED_BYTES),
+      "Content-Length": String(Q4_EXPECTED_BYTES),
       "Accept-Ranges": "bytes"
     }
   });
 }
 const originalFetch = globalThis.fetch.bind(globalThis);
 // Transformers.js captures env.fetch at import time. Override both fetch entry points.
-// The canonical Q4F16 asset remains in Ron-1's GitHub Release. Browser-safe chunks are
+// The canonical Q4 asset remains in Ron-1's GitHub Release. Browser-safe chunks are
 // served same-origin from Pages to avoid release CORS failures.
 const originalEnvFetch = typeof env.fetch === "function" ? env.fetch.bind(env) : originalFetch;
 function ronFetch(input, init, fallback) {
   const requestUrl = typeof input === "string" || input instanceof URL ? String(input) : input?.url;
-  if (requestUrl && requestUrl.includes("SmolLM2-135M-Instruct-ONNX") && requestUrl.includes("onnx/model_q4f16.onnx")) {
-    return fetchQ4F16FromPages(init);
+  if (requestUrl && requestUrl.includes("SmolLM2-135M-Instruct-ONNX") && requestUrl.includes("onnx/model_q4.onnx")) {
+    return fetchQ4FromPages(init);
   }
   if (requestUrl) {
     if (requestUrl.startsWith("blob:") || requestUrl.startsWith("data:")) return fallback(input, init);
@@ -138,7 +138,7 @@ self.onmessage = async (event) => {
     loadingStage = "tokenizer";
     beginRuntimeDiagnostics();
     try {
-      self.postMessage({ type: "status", text: "جاري تشغيل نواة Ron-1 المبنية على SmolLM2-135M بصيغة Q4F16. سيُعاد استخدام الملفات المخزنة في المتصفح متى أمكن، وقد يلزم تنزيلها إذا لم تكن متاحة محليًا." });
+      self.postMessage({ type: "status", text: "جاري تشغيل نواة Ron-1 المبنية على SmolLM2-135M بصيغة Q4. سيُعاد استخدام الملفات المخزنة في المتصفح متى أمكن، وقد يلزم تنزيلها إذا لم تكن متاحة محليًا." });
       const loadedTokenizer = await AutoTokenizer.from_pretrained(MODEL_ID, {
         progress_callback: (info) => { if (info && info.status) self.postMessage({ type: "progress", info }); },
       });
