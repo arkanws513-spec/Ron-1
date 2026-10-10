@@ -13,7 +13,7 @@
 <main>
 <h1>🤖 Ron-1</h1>
 <div class="sub">المساعد المستقل — تجربة عقل لغوي محلي</div>
-<div class="tag">Qwen3-0.6B · يعمل داخل المتصفح بعد تحميله</div>
+<div class="tag">Qwen2.5-0.5B · نسخة أخف للأجهزة المحدودة</div>
 <div id="chat" aria-live="polite"><div class="m r">أهلًا بك. اضغط «تحميل العقل» أولًا. النموذج يُحمّل من مستودع مفتوح إلى جهازك، وقد يستغرق التحميل الأول وقتًا ومساحة بيانات.</div></div>
 <div class="actions">
   <button id="load" type="button">تحميل العقل</button>
@@ -21,7 +21,7 @@
 </div>
 <form id="form"><input id="msg" autocomplete="off" maxlength="4000" placeholder="اكتب رسالتك إلى رون…" aria-label="رسالتك"><button id="send" type="submit" disabled>إرسال</button></form>
 <div class="note" id="status">النموذج لم يُحمّل بعد. بعد التحميل، تُولَّد الردود على جهازك ولا تُرسل المحادثة إلى خادم استدلال.</div>
-<div class="note">النموذج الأساسي مفتوح الأوزان: <a href="https://huggingface.co/onnx-community/Qwen3-0.6B-ONNX" target="_blank" rel="noreferrer">Qwen3-0.6B-ONNX</a>. جودة الإجابات وسرعتها تعتمد على جهازك ومتصفحك.</div>
+<div class="note">النموذج الأساسي مفتوح الأوزان: <a href="https://huggingface.co/onnx-community/Qwen2.5-0.5B-Instruct" target="_blank" rel="noreferrer">Qwen2.5-0.5B-Instruct</a>. جودة الإجابات وسرعتها تعتمد على جهازك ومتصفحك.</div>
 </main>
 <script>
 const chat=document.querySelector('#chat'),input=document.querySelector('#msg'),send=document.querySelector('#send'),status=document.querySelector('#status'),form=document.querySelector('#form'),loadButton=document.querySelector('#load'),clearButton=document.querySelector('#clear');
