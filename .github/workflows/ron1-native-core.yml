@@ -1,0 +1,53 @@
+name: Ron-1 Native Core CI
+
+on:
+  push:
+    branches: [main, ron1-native-core-bootstrap]
+    paths:
+      - "core/**"
+      - ".github/workflows/ron1-native-core.yml"
+  pull_request:
+    paths:
+      - "core/**"
+      - ".github/workflows/ron1-native-core.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-native-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: core/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r core/requirements.txt
+      - name: Test native architecture
+        run: python -m unittest discover -s core -p "test_*.py" -v
+      - name: Initialize Ron-1's own weights
+        run: python core/initialize.py --output core/weights/ron1-native.pt
+      - name: Verify checkpoint metadata and tensors
+        run: |
+          python - <<'PY'
+          import torch
+          p = "core/weights/ron1-native.pt"
+          ck = torch.load(p, map_location="cpu", weights_only=False)
+          assert ck["format"] == "ron1-native-state-dict-v1"
+          assert ck["trained"] is False
+          assert ck["config"]["pretrained"] is False
+          assert ck["state_dict"]
+          print("Native checkpoint verified:", p)
+          print("Trainable tensors:", len(ck["state_dict"]))
+          PY
+      - name: Preserve initialized weights as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ron1-native-initial-weights
+          path: core/weights/ron1-native.pt
+          if-no-files-found: error
+          retention-days: 30
