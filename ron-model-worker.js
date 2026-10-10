@@ -14,7 +14,7 @@ env.backends.onnx.wasm.proxy = false;
 try { env.backends.onnx.logLevel = "verbose"; } catch {}
 
 const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
-const GITHUB_Q4F16_WEIGHTS_URL = "https://github.com/arkanws513-spec/Ron-1/releases/download/ron1-smollm2-135m-q4-v1/Ron-1-Smollm2-135M-Instruct-Q4F16.onnx";
+const GITHUB_Q4F16_ASSET_API_URL = "https://api.github.com/repos/arkanws513-spec/Ron-1/releases/assets/627890887";
 const originalFetch = globalThis.fetch.bind(globalThis);
 // Transformers.js captures env.fetch at import time. Override both fetch entry points.
 // Only the exact Q4F16 weights file may leave GitHub Pages, and it is redirected to Ron-1's
@@ -23,7 +23,9 @@ const originalEnvFetch = typeof env.fetch === "function" ? env.fetch.bind(env) :
 function ronFetch(input, init, fallback) {
   const requestUrl = typeof input === "string" || input instanceof URL ? String(input) : input?.url;
   if (requestUrl && requestUrl.includes("SmolLM2-135M-Instruct-ONNX") && requestUrl.includes("onnx/model_q4f16.onnx")) {
-    return fallback(GITHUB_Q4F16_WEIGHTS_URL, init);
+    const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : undefined));
+    headers.set("Accept", "application/octet-stream");
+    return fallback(GITHUB_Q4F16_ASSET_API_URL, { ...init, headers });
   }
   if (requestUrl) {
     if (requestUrl.startsWith("blob:") || requestUrl.startsWith("data:")) return fallback(input, init);
@@ -84,7 +86,7 @@ self.onmessage = async (event) => {
     loadingStage = "tokenizer";
     beginRuntimeDiagnostics();
     try {
-      self.postMessage({ type: "status", text: "جاري تشغيل نواة Ron-1 المبنية على SmolLM2-135M بصيغة Q4. سيُعاد استخدام الملفات المخزنة في المتصفح متى أمكن، وقد يلزم تنزيلها إذا لم تكن متاحة محليًا." });
+      self.postMessage({ type: "status", text: "جاري تشغيل نواة Ron-1 المبنية على SmolLM2-135M بصيغة Q4F16. سيُعاد استخدام الملفات المخزنة في المتصفح متى أمكن، وقد يلزم تنزيلها إذا لم تكن متاحة محليًا." });
       const loadedTokenizer = await AutoTokenizer.from_pretrained(MODEL_ID, {
         progress_callback: (info) => { if (info && info.status) self.postMessage({ type: "progress", info }); },
       });
