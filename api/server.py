@@ -1,58 +1,130 @@
+import json
 import os
-import secrets
+import time
+import urllib.error
+import urllib.request
+from collections import defaultdict, deque
 
-from fastapi import FastAPI, Header, HTTPException, status
-from pydantic import BaseModel, ConfigDict, Field
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
-from core.ron import Ron
+app = FastAPI(title="Ron-1 Chat API", version="1.1.0")
 
-app = FastAPI(title="Ron-1", version="1.0.0")
-ron = Ron()
+ALLOWED_ORIGINS = {
+    origin.strip()
+    for origin in os.getenv(
+        "RON_ALLOWED_ORIGINS",
+        "https://arkanws513-spec.github.io",
+    ).split(",")
+    if origin.strip()
+}
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=sorted(ALLOWED_ORIGINS),
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type"],
+)
+
+_requests = defaultdict(deque)
+RATE_LIMIT = int(os.getenv("RON_RATE_LIMIT_PER_MINUTE", "12"))
 
 
 class ChatRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    message: str = Field(min_length=1, max_length=20_000)
-    # Supplied by Ron Cloud only after it authenticates the account.
-    user_id: str = Field(min_length=1, max_length=256)
+    message: str = Field(min_length=1, max_length=8000)
     conversation_id: str = Field(default="default", min_length=1, max_length=128)
 
 
+def check_rate_limit(request: Request) -> None:
+    now = time.time()
+    client_ip = request.client.host if request.client else "unknown"
+    bucket = _requests[client_ip]
+    while bucket and now - bucket[0] > 60:
+        bucket.popleft()
+    if len(bucket) >= RATE_LIMIT:
+        raise HTTPException(status_code=429, detail="تم تجاوز حد الرسائل مؤقتًا. حاول بعد دقيقة.")
+    bucket.append(now)
+
+
+@app.get("/")
+def root():
+    return {"service": "Ron-1", "status": "ready", "docs": "/docs"}
+
+
 @app.get("/health")
-def health() -> dict[str, str]:
-    """Lightweight liveness check; does not load the model."""
-    return {"status": "ok", "assistant": "Ron-1"}
+def health():
+    return {
+        "status": "ok",
+        "assistant": "Ron-1",
+        "provider_configured": bool(os.getenv("HF_TOKEN")),
+        "model": os.getenv("HF_MODEL", "Qwen/Qwen3-4B-Instruct-2507"),
+    }
 
 
 @app.post("/chat")
-def chat(
-    request: ChatRequest,
-    x_ron_api_key: str | None = Header(default=None, alias="X-Ron-API-Key"),
-) -> dict[str, str]:
-    configured_key = os.getenv("RON_API_KEY", "")
-    if not configured_key:
+def chat(body: ChatRequest, request: Request):
+    check_rate_limit(request)
+    token = os.getenv("HF_TOKEN", "").strip()
+    if not token:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Chat service is not configured.",
-        )
-    if not x_ron_api_key or not secrets.compare_digest(x_ron_api_key, configured_key):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid API credentials.",
+            status_code=503,
+            detail="خدمة النموذج لم تُضبط بعد. أضف HF_TOKEN في متغيرات Railway.",
         )
 
-    message = request.message.strip()
-    if not message:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Message must not be blank.",
-        )
-
-    return {
-        "response": ron.chat(
-            message,
-            user_id=request.user_id,
-            conversation_id=request.conversation_id,
-        )
+    model = os.getenv("HF_MODEL", "Qwen/Qwen3-4B-Instruct-2507")
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "أنت Ron-1، مساعد عربي مفيد وواضح. أجب بلغة المستخدم، "
+                    "ولا تدّعِ أنك نفذت إجراءات لم تنفذها."
+                ),
+            },
+            {"role": "user", "content": body.message.strip()},
+        ],
+        "max_tokens": int(os.getenv("RON_MAX_TOKENS", "700")),
+        "stream": False,
     }
+    req = urllib.request.Request(
+        "https://router.huggingface.co/v1/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=90) as response:
+            result = json.loads(response.read().decode("utf-8"))
+        answer = result["choices"][0]["message"]["content"]
+        if isinstance(answer, list):
+            answer = "".join(
+                part.get("text", "") if isinstance(part, dict) else str(part)
+                for part in answer
+            )
+        return {"response": str(answer), "model": model}
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")[:1000]
+        if exc.code in (401, 403):
+            raise HTTPException(
+                status_code=502,
+                detail="رمز Hugging Face غير صالح أو لا يملك صلاحية استخدام مزود الاستدلال.",
+            ) from exc
+        if exc.code == 429:
+            raise HTTPException(
+                status_code=503,
+                detail="مزود النموذج بلغ حد الاستخدام المجاني مؤقتًا. حاول لاحقًا.",
+            ) from exc
+        raise HTTPException(
+            status_code=502,
+            detail=f"تعذر على مزود النموذج إكمال الطلب (HTTP {exc.code}).",
+        ) from exc
+    except (urllib.error.URLError, TimeoutError, KeyError, ValueError, json.JSONDecodeError) as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="لم يتمكن رون من الاتصال بمزود النموذج. تحقق من إعداداته وحاول مجددًا.",
+        ) from exc
