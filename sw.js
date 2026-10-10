@@ -1,4 +1,4 @@
-const CACHE_NAME = "ron1-runtime-v1";
+const CACHE_NAME = "ron1-runtime-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
@@ -39,7 +39,7 @@ self.addEventListener("fetch", (event) => {
     if (cached) return cached;
     const response = await fetch(request);
     if (response.ok && response.type !== "opaque" && request.headers.get("range") === null) {
-      const isRuntimeAsset = /\/(?:vendor\/transformers\/|models-v2?\/|weights\/ron1-q4f16-\d+\.bin)/.test(url.pathname);
+      const isRuntimeAsset = /\/(?:vendor\/transformers\/|models-v2?\/|weights\\/ron1-q4-\\d{2}\\.bin)/.test(url.pathname);
       if (isRuntimeAsset) {
         // Large weight chunks may exceed a device's storage quota. Cache failures must never break inference.
         event.waitUntil(cache.put(request, response.clone()).catch(() => undefined));
