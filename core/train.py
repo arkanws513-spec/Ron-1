@@ -24,7 +24,11 @@ def main():
     p.add_argument("--lr", type=float, default=3e-4)
     p.add_argument("--output", default="core/weights/ron1-native.pt")
     p.add_argument("--resume", action="store_true")
-    a=p.parse_args(); c=load_config()
+    a=p.parse_args()
+    if a.steps < 1: raise SystemExit("--steps must be at least 1.")
+    if a.batch_size < 1: raise SystemExit("--batch-size must be at least 1.")
+    if a.lr <= 0: raise SystemExit("--lr must be positive.")
+    c=load_config()
     random.seed(c["seed"]); torch.manual_seed(c["seed"])
     model=Ron1Core(c); out=Path(a.output); start=0
     if a.resume and out.exists():
