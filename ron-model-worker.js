@@ -3,7 +3,7 @@ import {
   AutoModelForCausalLM,
 } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
 
-const MODEL_ID = "onnx-community/Qwen3-0.6B-ONNX";
+const MODEL_ID = "onnx-community/Qwen2.5-0.5B-Instruct";
 let tokenizer = null;
 let model = null;
 let loading = false;
@@ -17,7 +17,7 @@ self.onmessage = async (event) => {
     loading = true;
     const hasWebGPU = typeof navigator !== "undefined" && !!navigator.gpu;
     const attempts = hasWebGPU
-      ? [{ device: "webgpu", dtype: "q4f16", label: "معالج الرسوميات" }, { device: "wasm", dtype: "q4", label: "معالج الجهاز" }]
+      ? [{ device: "webgpu", dtype: "q4", label: "معالج الرسوميات" }, { device: "wasm", dtype: "q4", label: "معالج الجهاز" }]
       : [{ device: "wasm", dtype: "q4", label: "معالج الجهاز" }];
     let lastError = null;
 
@@ -69,11 +69,11 @@ self.onmessage = async (event) => {
       const inputs = tokenizer.apply_chat_template(messages, {
         add_generation_prompt: true,
         return_dict: true,
-        enable_thinking: false,
+        
       });
       const output = await model.generate({
         ...inputs,
-        max_new_tokens: 160,
+        max_new_tokens: 96,
         do_sample: true,
         top_k: 20,
         temperature: 0.7,
