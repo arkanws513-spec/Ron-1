@@ -21,22 +21,50 @@ const Q4F16_CHUNKS = [
 ];
 const Q4F16_EXPECTED_BYTES = 117266133;
 async function fetchQ4F16FromPages(init) {
-  // Release downloads lack reliable browser CORS headers, so fetch same-origin chunks.
-  const responses = await Promise.all(Q4F16_CHUNKS.map((url) => originalFetch(url, { signal: init?.signal })));
-  for (const response of responses) {
-    if (!response.ok) throw new Error("Failed to fetch a Ron-1 Q4F16 chunk: HTTP " + response.status);
-  }
-  const parts = await Promise.all(responses.map((response) => response.blob()));
-  const totalBytes = parts.reduce((total, part) => total + part.size, 0);
-  if (totalBytes !== Q4F16_EXPECTED_BYTES) {
-    throw new Error("Incomplete Ron-1 Q4F16 model: expected " + Q4F16_EXPECTED_BYTES + " bytes, received " + totalBytes);
-  }
-  const modelBlob = new Blob(parts, { type: "application/octet-stream" });
-  return new Response(modelBlob, {
+  // Stream same-origin chunks sequentially: no cross-origin Release fetch and no extra 117 MB Blob copy.
+  let chunkIndex = 0;
+  let reader = null;
+  let totalBytes = 0;
+  const body = new ReadableStream({
+    async pull(controller) {
+      try {
+        while (true) {
+          if (!reader) {
+            if (chunkIndex >= Q4F16_CHUNKS.length) {
+              if (totalBytes !== Q4F16_EXPECTED_BYTES) {
+                controller.error(new Error("Incomplete Ron-1 Q4F16 model: expected " + Q4F16_EXPECTED_BYTES + " bytes, received " + totalBytes));
+              } else {
+                controller.close();
+              }
+              return;
+            }
+            const response = await originalFetch(Q4F16_CHUNKS[chunkIndex++], { signal: init?.signal });
+            if (!response.ok) throw new Error("Failed to fetch a Ron-1 Q4F16 chunk: HTTP " + response.status);
+            if (!response.body) throw new Error("Ron-1 Q4F16 chunk has no readable response body");
+            reader = response.body.getReader();
+          }
+          const part = await reader.read();
+          if (part.done) {
+            reader = null;
+            continue;
+          }
+          totalBytes += part.value.byteLength;
+          controller.enqueue(part.value);
+          return;
+        }
+      } catch (error) {
+        controller.error(error);
+      }
+    },
+    async cancel(reason) {
+      try { await reader?.cancel(reason); } catch {}
+    }
+  });
+  return new Response(body, {
     status: 200,
     headers: {
       "Content-Type": "application/octet-stream",
-      "Content-Length": String(totalBytes),
+      "Content-Length": String(Q4F16_EXPECTED_BYTES),
       "Accept-Ranges": "bytes"
     }
   });
