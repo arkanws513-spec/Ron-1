@@ -1,27 +1,21 @@
-name: Deploy Ron-1 server to Hugging Face Space
+name: Keep only Ron-1 on Hugging Face
 
-# Deploy the existing Space when the server files or workflow are updated.
 on:
   push:
     branches: [main]
     paths:
       - ".github/workflows/deploy-ron-server.yml"
-      - "app.py"
-      - "requirements.txt"
-      - "core/**"
-      - "model/**"
-      - "api/**"
   workflow_dispatch:
 
 jobs:
-  deploy:
+  cleanup-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ron-1
         uses: actions/checkout@v4
       - name: Install Hugging Face Hub
         run: python -m pip install --upgrade huggingface_hub
-      - name: Pause older compute Spaces to free CPU-basic capacity
+      - name: Delete Hugging Face repositories except Ron-1
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -31,66 +25,54 @@ jobs:
 
           token = os.environ.get("HF_TOKEN")
           if not token:
-              raise SystemExit("HF_TOKEN secret is required to manage Hugging Face Spaces.")
+              raise SystemExit("HF_TOKEN secret is required; no repositories were deleted.")
           api = HfApi(token=token)
-          target = "arkanws513/Ron-1-server"
-          spaces = list(api.list_spaces(author="arkanws513"))
-          print(f"Found {len(spaces)} Spaces owned by arkanws513.")
-          for space in spaces:
-              repo = getattr(space, "id", None)
-              sdk = getattr(space, "sdk", None)
-              if not repo or repo == target:
-                  continue
-              if sdk == "static":
-                  print(f"Keeping static Space unchanged: {repo}")
-                  continue
+          owner = "arkanws513"
+          keep = {
+              "arkanws513/Ron-1-server",
+              "arkanws513/Ron-1",
+          }
+
+          repos = []
+          for repo_type, listing in (
+              ("space", api.list_spaces(author=owner)),
+              ("model", api.list_models(author=owner)),
+              ("dataset", api.list_datasets(author=owner)),
+          ):
+              for item in listing:
+                  repo_id = getattr(item, "id", None)
+                  if repo_id and repo_id not in keep:
+                      repos.append((repo_type, repo_id))
+
+          print(f"Found {len(repos)} Hugging Face repositories to remove.")
+          failures = []
+          for repo_type, repo_id in repos:
               try:
-                  api.pause_space(repo_id=repo)
-                  print(f"Paused old Space: {repo}")
+                  api.delete_repo(repo_id=repo_id, repo_type=repo_type)
+                  print(f"DELETED {repo_type}: {repo_id}")
               except Exception as exc:
-                  print(f"Could not pause {repo}: {type(exc).__name__}: {exc}")
+                  failures.append((repo_type, repo_id, str(exc)))
+                  print(f"FAILED {repo_type}: {repo_id}: {type(exc).__name__}: {exc}")
+
+          print("Protected Ron-1 repositories:")
+          for repo_id in sorted(keep):
+              print(f"KEEP: {repo_id}")
+
+          if failures:
+              raise SystemExit(f"{len(failures)} repository deletions failed; see log above.")
           PY
-      - name: Prepare Hugging Face Space
-        run: |
-          rm -rf hf_space
-          mkdir -p hf_space
-          cp -r app.py requirements.txt core model api hf_space/
-          cat > hf_space/README.md <<'EOF'
-          ---
-          title: Ron-1
-          emoji: 🤖
-          colorFrom: blue
-          colorTo: purple
-          sdk: gradio
-          app_file: app.py
-          pinned: false
-          ---
-          # Ron-1
-          Ron-1 — Qwen3-1.7B local inference server.
-          EOF
-      - name: Upload Ron-1 to the existing Hugging Face Space
+      - name: Ensure Ron-1 Space files are deployed
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           python - <<'PY'
           import os
           from huggingface_hub import HfApi
-
-          token = os.environ.get("HF_TOKEN")
-          if not token:
-              raise SystemExit("HF_TOKEN secret is required for this optional Hugging Face deployment.")
-          api = HfApi(token=token)
+          api = HfApi(token=os.environ["HF_TOKEN"])
           repo = "arkanws513/Ron-1-server"
-          api.upload_folder(
-              repo_id=repo,
-              repo_type="space",
-              folder_path="hf_space",
-              commit_message="Deploy Ron-1 to existing Gradio Space",
-          )
-          print("Ron-1 files uploaded to the existing Hugging Face Space.")
           try:
               api.restart_space(repo_id=repo)
-              print("Requested restart for Ron-1.")
+              print(f"Requested restart for {repo}.")
           except Exception as exc:
-              print(f"Ron-1 restart request did not complete: {type(exc).__name__}: {exc}")
+              print(f"Restart request did not complete: {type(exc).__name__}: {exc}")
           PY
