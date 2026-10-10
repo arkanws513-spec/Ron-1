@@ -30,22 +30,11 @@ jobs:
           VENDOR_DIR="vendor/transformers"
           mkdir -p "$MODEL_DIR" "$VENDOR_DIR"
 
-          # Vendor Transformers.js and its ONNX Runtime WASM files only if missing.
-          if [ ! -f "$VENDOR_DIR/transformers.min.js" ] || ! compgen -G "$VENDOR_DIR/ort-wasm*" >/dev/null; then
-            npm pack @huggingface/transformers@3.7.2 --pack-destination "$RUNNER_TEMP"
-            PACKAGE_TGZ="$(find "$RUNNER_TEMP" -maxdepth 1 -name 'huggingface-transformers-3.7.2.tgz' -print -quit)"
-            mkdir -p "$RUNNER_TEMP/transformers-package"
-            tar -xzf "$PACKAGE_TGZ" -C "$RUNNER_TEMP/transformers-package"
-            cp "$RUNNER_TEMP/transformers-package/package/dist/transformers.min.js" "$VENDOR_DIR/"
-            find "$RUNNER_TEMP/transformers-package/package/dist" -maxdepth 1 -type f -name 'ort-wasm*' -exec cp {} "$VENDOR_DIR/" \;
-          fi
-
-          # Keep model metadata and tokenizer files in this GitHub repository.
-          MODEL_BASE="https://huggingface.co/onnx-community/SmolLM2-135M-Instruct-ONNX/resolve/main"
+          # GitHub-only policy: all runtime and model metadata must already be committed here.
+          test -s "$VENDOR_DIR/transformers.min.js"
+          compgen -G "$VENDOR_DIR/ort-wasm*.wasm" >/dev/null
           for file in config.json generation_config.json merges.txt quantize_config.json special_tokens_map.json tokenizer.json tokenizer_config.json vocab.json; do
-            if [ ! -s "$MODEL_DIR/$file" ]; then
-              curl --fail --location --retry 3 --silent --show-error "$MODEL_BASE/$file" -o "$MODEL_DIR/$file"
-            fi
+            test -s "$MODEL_DIR/$file"
           done
 
           # Commit the vendored runtime/model metadata so future app runs and deployments
