@@ -26,7 +26,7 @@ assert.equal(chunks.reduce((sum, [, size]) => sum + size, 0), 117266133);
 
 assert.match(worker, /AutoTokenizer\.from_pretrained\(MODEL_ID/);
 assert.match(worker, /AutoModelForCausalLM\.from_pretrained\(MODEL_ID/);
-assert.match(worker, /type: "generate"/);
+assert.match(worker, /type === "generate"/);
 assert.match(worker, /max_new_tokens: 80/);
 assert.match(worker, /type: "ready"/);
 assert.match(worker, /type: "answer"/);
