@@ -1,0 +1,1 @@
+{"format":"onnx-q4-shards-v1","totalBytes":180581125,"chunks":[{"file":"ron1-q4-00.bin","size":40000000},{"file":"ron1-q4-01.bin","size":40000000},{"file":"ron1-q4-02.bin","size":40000000},{"file":"ron1-q4-03.bin","size":40000000},{"file":"ron1-q4-04.bin","size":20581125}]}
