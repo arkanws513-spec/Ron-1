@@ -24,7 +24,7 @@ self.onmessage = async (event) => {
     for (let i = 0; i < attempts.length; i++) {
       const option = attempts[i];
       try {
-        self.postMessage({ type: "status", text: "جاري تحميل Qwen3-0.6B عبر " + option.label + "… قد يستغرق التحميل الأول بعض الوقت." });
+        self.postMessage({ type: "status", text: "جاري تحميل Qwen2.5-0.5B عبر " + option.label + "… قد يستغرق التحميل الأول بعض الوقت." });
         const loadedTokenizer = await AutoTokenizer.from_pretrained(MODEL_ID, {
           progress_callback: (info) => {
             if (info && info.status) self.postMessage({ type: "progress", info });
