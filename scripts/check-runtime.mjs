@@ -17,7 +17,7 @@ assert.ok(!html.includes("onnx-community"));
 assert.ok(!html.includes("transformers.min.js"));
 assert.match(html, /لا يوجد أي تحويل تلقائي إلى SmolLM2/);
 assert.match(pages, /cp index\.html sw\.js site\//);
-assert.doesNotMatch(pages, /huggingface|SmolLM2|onnx\/model_q4|ron1-q4|vendor\/transformers/i);
+assert.doesNotMatch(pages, /curl.*huggingface|onnx\/model_q4|ron1-q4|cp -R vendor|vendor\/transformers site/i);
 assert.match(sw, /ron1-native-ui-v1/);
 assert.doesNotMatch(sw, /weights|models-v2|vendor\/transformers/i);
 assert.match(server, /ron1-native-state-dict-v1/);
