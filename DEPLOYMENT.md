@@ -1,29 +1,26 @@
-# Ron-1 deployment
+# نشر Ron-1
 
-## Architecture
-- Source code, chat UI, tests, and CI: GitHub.
-- Static web UI: GitHub Pages (`index.html`).
-- Chat API: FastAPI in `api/server.py`, deployable as a Vercel Python function (project root: `api`) or Docker service.
-- Inference: Hugging Face Inference Providers using the OpenAI-compatible endpoint; the model weights are not downloaded into the API container.
-- Default model: `Qwen/Qwen3-4B-Instruct-2507`; override with `HF_MODEL`.
+## المعمارية المعتمدة
 
-## Required environment variables
-- `HF_TOKEN`: a Hugging Face access token with permission to call inference providers. Store it only in the hosting provider's encrypted environment variables. Never place it in `index.html` or commit it to Git.
-- `RON_ALLOWED_ORIGINS`: optional comma-separated list of allowed browser origins; defaults to `https://arkanws513-spec.github.io`.
-- `RON_MAX_TOKENS`: optional output token limit (default 700).
-- `RON_RATE_LIMIT_PER_MINUTE`: optional per-IP in-memory request limit (default 12).
+- المصدر وإدارة التغييرات: GitHub.
+- واجهة المحادثة: GitHub Pages.
+- الاستدلال: محلي داخل متصفح المستخدم عبر Transformers.js وملفات ONNX لنموذج SmolLM2-135M-Instruct.
+- لا توجد API خارجية للمحادثة ولا حاجة إلى مفاتيح API أو خادم مدفوع.
 
-## Deploy API
-### Vercel
-Set the project root directory to `api`, framework to FastAPI, and connect `arkanws513-spec/Ron-1`. Add `HF_TOKEN` in the project's encrypted environment variables, deploy, and test `/health` and `/chat`.
+## النشر
 
-### Railway / Docker
-Build from the repository root using `Dockerfile`, listen on the injected `PORT`, and add `HF_TOKEN` in service variables. Configure the public health check as `/health`.
+يعمل سير العمل .github/workflows/pages.yml على نشر ملفات المستودع إلى GitHub Pages عند التحديث على الفرع الرئيسي. رابط الموقع:
 
-After a public API URL is verified, set `API_BASE` in `index.html` to that exact URL and commit the change. The UI intentionally reports that the backend is not deployed while no verified API URL is configured.
+https://arkanws513-spec.github.io/Ron-1/
 
-## Important constraints
-- The inference provider's free availability and rate limits can change; a valid token is required. Do not enable paid inference or paid hosting without the owner's approval.
-- Railway currently rejected service creation because the account's free-plan resource limit was reached.
-- Vercel project creation succeeded, but deployment was blocked by a Vercel account/scope authorization error. No paid plan was enabled and no payment was made.
-- The local Qwen weights are not required by this remote-inference API; the original local Gradio app remains separate.
+## قيود مهمة
+
+1. تنزيل النموذج لأول مرة يحتاج اتصالًا بالإنترنت وقد يستهلك نحو 181 ميجابايت للأوزان بصيغة Q4، بالإضافة إلى ملفات أخرى.
+2. المعالجة تتم على الجهاز؛ السرعة والذاكرة تختلفان حسب الهاتف والمتصفح.
+3. وضع WASM هو المسار الافتراضي لتفادي فشل الحصول على GPU adapter. لا يعني ذلك أن كل جهاز سيدعم النموذج؛ يلزم اختبار حي على الهاتف.
+4. تغيير الملفات في GitHub لا يثبت نجاح التشغيل، وقد يحتاج GitHub Pages عدة دقائق لنشر النسخة الجديدة. حدّث الصفحة بعد النشر قبل الاختبار.
+5. لا تحذف أو تستبدل ملفات النموذج أو تغيّر صيغة quantization إلا بعد اختبار واضح على الجهاز المستهدف.
+
+## الخصوصية
+
+نص المحادثة يُمرر إلى النموذج داخل المتصفح ولا يُرسل إلى خادم استدلال تابع للمشروع. مع ذلك، تنزيل المكتبة والنموذج يتصل بمصادر الاستضافة الخارجية المذكورة في الكود.
