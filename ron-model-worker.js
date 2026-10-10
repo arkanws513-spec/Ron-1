@@ -1,7 +1,7 @@
 import { env, AutoTokenizer, AutoModelForCausalLM } from "./vendor/transformers/transformers.min.js";
 
 // Runtime assets are served from this GitHub Pages site only.
-env.remoteHost = new URL("./models", self.location.href).href.replace(/\\/$/, "");
+env.remoteHost = new URL("./models", self.location.href).href.replace(/\/$/, "");
 env.backends.onnx.wasm.wasmPaths = new URL("./vendor/transformers/", import.meta.url).href;
 
 const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
