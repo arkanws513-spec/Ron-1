@@ -7,6 +7,9 @@ env.localModelPath = new URL("./models/", self.location.href).href;
 env.useBrowserCache = true;
 env.useWasmCache = true;
 env.backends.onnx.wasm.wasmPaths = new URL("./vendor/transformers/", self.location.href).href;
+// Keep the WebAssembly runtime conservative for phones and memory-limited browsers.
+env.backends.onnx.wasm.numThreads = 1;
+env.backends.onnx.wasm.proxy = false;
 
 const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
 const GITHUB_Q4_WEIGHTS_URL = "https://github.com/arkanws513-spec/Ron-1/releases/download/ron1-smollm2-135m-q4-v1/Ron-1-Smollm2-135M-Instruct-Q4.onnx";
@@ -52,7 +55,8 @@ self.onmessage = async (event) => {
       self.postMessage({ type: "ready", text: "النموذج جاهز داخل المتصفح" });
     } catch (error) {
       tokenizer = null; model = null;
-      self.postMessage({ type: "error", text: "تعذر تحميل النموذج على هذا الجهاز: " + (error?.message || String(error)) + ". لم نبدأ تنزيلًا ثانيًا تلقائيًا؛ أرسل نص الخطأ لفحصه." });
+      const details = [error?.name, error?.message || String(error), error?.stack].filter(Boolean).join("\\n");
+      self.postMessage({ type: "error", text: "تعذر تحميل النموذج على هذا الجهاز. قد يكون السبب حدّ ذاكرة المتصفح أو عدم توافق WebAssembly. التفاصيل: " + details + ". لم نبدأ تنزيلًا ثانيًا تلقائيًا؛ حدّث الصفحة وجرب متصفحًا حديثًا أو جهازًا بذاكرة أكبر، ثم أرسل التفاصيل إن استمر الخطأ." });
     } finally { loading = false; }
     return;
   }
