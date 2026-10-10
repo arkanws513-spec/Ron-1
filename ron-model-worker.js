@@ -1,4 +1,4 @@
-import { env, AutoTokenizer, AutoModelForCausalLM } from "./vendor/transformers/transformers.min.js";
+import { env, AutoTokenizer, AutoModelForCausalLM, TextStreamer } from "./vendor/transformers/transformers.min.js";
 
 // Runtime library, tokenizer/configuration files, WASM and weights are served from Ron's GitHub repository/release.
 env.allowLocalModels = true;
@@ -117,8 +117,17 @@ self.onmessage = async (event) => {
     }
     generating = true;
     try {
+      self.postMessage({ type: "generation_started", text: "بدأ رون توليد الرد" });
       const inputs = tokenizer.apply_chat_template(messages, { add_generation_prompt: true, return_dict: true });
-      const output = await model.generate({ ...inputs, max_new_tokens: 64, do_sample: true, top_k: 20, temperature: 0.7, repetition_penalty: 1.08 });
+      const streamer = new TextStreamer(tokenizer, {
+        skip_prompt: true,
+        skip_special_tokens: true,
+        callback_function: (text) => {
+          if (text) self.postMessage({ type: "token", text });
+        },
+      });
+      // Short, deterministic generations are more responsive on low-memory mobile CPUs.
+      const output = await model.generate({ ...inputs, max_new_tokens: 40, do_sample: false, repetition_penalty: 1.08, streamer });
       const allTokens = output?.tolist?.()[0] || [];
       const inputLength = inputs?.input_ids?.dims?.[1] || 0;
       const answer = tokenizer.decode(allTokens.slice(inputLength), { skip_special_tokens: true }).trim();
