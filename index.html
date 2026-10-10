@@ -3,55 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ron-1</title>
+<meta name="theme-color" content="#10131a">
+<title>Ron-1 | المساعد المستقل</title>
 <style>
-body{margin:0;font-family:system-ui,sans-serif;background:#10131a;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center}
-main{width:min(720px,92%);background:#181d27;border-radius:22px;padding:24px;box-sizing:border-box;box-shadow:0 20px 60px #0008}
-h1{margin:0 0 4px}.sub{color:#aab3c2;margin-bottom:20px}
-#chat{height:48vh;overflow:auto;padding:8px}.m{padding:12px 15px;border-radius:15px;margin:10px 0;white-space:pre-wrap}.r{background:#252c39}.u{background:#303b50}
-form{display:flex;gap:8px}input{flex:1;padding:14px;border:0;border-radius:14px;background:#252c39;color:#fff;font-size:16px}button{border:0;border-radius:14px;padding:0 20px;font-size:16px;cursor:pointer}button:disabled{opacity:.55}
-.note{text-align:center;color:#8993a3;font-size:13px;margin-top:12px}
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#10131a;color:#f5f7fb;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}main{width:min(760px,100%);background:#181d27;border:1px solid #30394a;border-radius:22px;padding:clamp(16px,4vw,28px);box-shadow:0 20px 60px #0008}h1{margin:0;font-size:clamp(24px,5vw,32px)}.sub{color:#aab3c2;margin:4px 0 18px}#chat{height:min(56vh,560px);min-height:260px;overflow:auto;padding:8px 2px}.m{padding:12px 15px;border-radius:15px;margin:10px 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}.r{background:#252c39}.u{background:#303b50}form{display:flex;gap:8px}input{min-width:0;flex:1;padding:14px;border:1px solid #3b4558;border-radius:14px;background:#252c39;color:#fff;font-size:16px}button{border:0;border-radius:14px;padding:0 20px;background:#b9d3ff;color:#10131a;font-weight:700;font-size:16px;cursor:pointer}button:disabled{opacity:.55;cursor:wait}.note{text-align:center;color:#aab3c2;font-size:13px;margin-top:12px}.tag{display:inline-block;border:1px solid #39465a;border-radius:999px;padding:3px 9px;font-size:12px;color:#cbd5e1;margin-bottom:12px}
 </style>
 </head>
 <body>
 <main>
 <h1>🤖 Ron-1</h1><div class="sub">المساعد المستقل</div>
-<div id="chat"><div class="m r">مرحبًا، أنا Ron-1. جاري الاتصال بعقل Qwen3-1.7B...</div></div>
-<form id="form"><input id="msg" autocomplete="off" placeholder="اكتب رسالتك إلى رون..."><button id="send" type="submit">إرسال</button></form>
-<div class="note" id="status">الاتصال بالخادم...</div>
+<div class="tag">نموذج مفتوح المصدر عبر خدمة استدلال</div>
+<div id="chat" aria-live="polite"><div class="m r">أهلًا بك! أنا رون. أتحقق من الاتصال بخادم المحادثة…</div></div>
+<form id="form"><input id="msg" autocomplete="off" maxlength="8000" placeholder="اكتب رسالتك إلى رون…" aria-label="رسالتك"><button id="send" type="submit">إرسال</button></form>
+<div class="note" id="status">جارٍ الاتصال…</div>
 </main>
-<script type="module">
-import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
+<script>
+const API_BASE = "RON_API_URL_PLACEHOLDER";
 const chat=document.querySelector('#chat'),input=document.querySelector('#msg'),send=document.querySelector('#send'),status=document.querySelector('#status'),form=document.querySelector('#form');
-let app=null, connecting=null;
 function add(cls,text){const d=document.createElement('div');d.className='m '+cls;d.textContent=text;chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;}
-async function connect(){
-  if(app)return app;
-  if(connecting)return connecting;
-  status.textContent='الاتصال بخادم Ron-1...';
-  connecting=Client.connect('arkanws513/Ron-1-server',{status_callback:s=>{if(s?.status)status.textContent='الخادم: '+s.status;}})
-    .then(x=>{app=x;status.textContent='Ron-1 متصل ويعمل بـ Qwen3-1.7B';return x;})
-    .catch(e=>{status.textContent='الخادم غير متاح حاليًا';throw e;})
-    .finally(()=>{connecting=null;});
-  return connecting;
-}
-connect().catch(()=>{});
-form.addEventListener('submit',async e=>{
-  e.preventDefault();
-  const s=input.value.trim();
-  if(!s)return;
-  add('u',s); input.value=''; send.disabled=true; status.textContent='رون يتصل بالخادم...';
-  try{
-    const server=await connect();
-    status.textContent='رون يفكر...';
-    const result=await server.predict('/chat',{message:s});
-    const value=result?.data?.[0] ?? result?.data ?? '';
-    add('r',typeof value==='string'?value:JSON.stringify(value));
-    status.textContent='Ron-1 جاهز';
-  }catch(err){
-    add('r','خادم Ron-1 غير متاح الآن. الواجهة تعمل، لكن خادم Qwen لم يُنشر بعد.');
-    status.textContent='بانتظار تشغيل خادم Ron-1';
-  }finally{send.disabled=false;input.focus();}
-});
+async function checkHealth(){try{const r=await fetch(API_BASE+'/health');if(!r.ok)throw new Error();const h=await r.json();status.textContent=h.provider_configured?'رون متصل وجاهز للمحادثة':'الخادم يعمل، وبانتظار إعداد مفتاح مزود النموذج';}catch(e){status.textContent='خادم المحادثة غير متاح حاليًا';}}
+checkHealth();
+form.addEventListener('submit',async e=>{e.preventDefault();const message=input.value.trim();if(!message)return;add('u',message);input.value='';send.disabled=true;status.textContent='رون يفكر…';try{const r=await fetch(API_BASE+'/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,conversation_id:'web-default'})});const data=await r.json();if(!r.ok)throw new Error(data.detail||'تعذر الحصول على رد');add('r',data.response||'وصل رد فارغ من النموذج.');status.textContent='Ron-1 جاهز';}catch(err){add('r','تعذر الحصول على رد الآن: '+err.message);status.textContent='تحقق من اتصال الخادم وإعداد مزود النموذج';}finally{send.disabled=false;input.focus();}});
 </script>
-</body></html>
+</body>
+</html>
