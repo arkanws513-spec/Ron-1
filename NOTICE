@@ -1,6 +1,6 @@
-Ron-1 uses the Qwen3-1.7B model from Qwen under the Apache License 2.0.
+Ron-1 uses SmolLM2-135M-Instruct, distributed by Hugging Face under the Apache License 2.0.
 
-Upstream model:
-https://huggingface.co/Qwen/Qwen3-1.7B
+Model repository:
+https://huggingface.co/onnx-community/SmolLM2-135M-Instruct-ONNX
 
-Ron-1 is an independent project and is not an official Qwen or Alibaba product.
+Ron-1 is an independent project and is not an official Hugging Face or HuggingFaceTB product.
