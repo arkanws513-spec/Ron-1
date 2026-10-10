@@ -181,7 +181,18 @@ self.onmessage = async (event) => {
         },
       });
       // Short, deterministic generations are more responsive on low-memory mobile CPUs.
-      const output = await model.generate({ ...inputs, max_new_tokens: 80, do_sample: false, repetition_penalty: 1.08, streamer });
+      // Some ONNX/WASM builds expose a float16 KV cache while the graph expects float32.
+      // Retry only that known dtype mismatch without KV caching; this is slower but avoids a hard failure.
+      let output;
+      try {
+        output = await model.generate({ ...inputs, max_new_tokens: 80, do_sample: false, repetition_penalty: 1.08, streamer });
+      } catch (firstError) {
+        const detail = String(firstError?.message || firstError);
+        if (!/Unexpected input data type|tensor\(float16\).*tensor\(float\)|expected tensor\(float\)/i.test(detail)) throw firstError;
+        self.postMessage({ type: "generation_reset" });
+        self.postMessage({ type: "status", text: "رصد رون تعارضًا في نوع بيانات ذاكرة الاستدلال؛ يجرب مسار توافق أبطأ…" });
+        output = await model.generate({ ...inputs, use_cache: false, max_new_tokens: 48, do_sample: false, repetition_penalty: 1.08, streamer });
+      }
       const allTokens = output?.tolist?.()[0] || [];
       const inputLength = inputs?.input_ids?.dims?.[1] || 0;
       const answer = tokenizer.decode(allTokens.slice(inputLength), { skip_special_tokens: true }).trim();
