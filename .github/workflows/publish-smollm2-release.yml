@@ -28,4 +28,16 @@ jobs:
       - name: Download Q4 ONNX weights
         run: |
           hf download onnx-community/SmolLM2-135M-Instruct-ONNX onnx/model_q4.onnx --local-dir ./download
-          cp ./download/onnx/model_q4.onnx ./Ron-1-Sm olLM2-135M-Instruct-Q4.onnx
+          cp ./download/onnx/model_q4.onnx ./Ron-1-Smollm2-135M-Instruct-Q4.onnx
+          sha256sum ./Ron-1-Smollm2-135M-Instruct-Q4.onnx > ./Ron-1-Smollm2-135M-Instruct-Q4.sha256
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create ron1-smollm2-135m-q4-v1 \
+            ./Ron-1-Smollm2-135M-Instruct-Q4.onnx \
+            ./Ron-1-Smollm2-135M-Instruct-Q4.sha256 \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "Ron-1 SmolLM2-135M-Instruct Q4 v1" \
+            --notes "SmolLM2-135M-Instruct ONNX Q4 weights for Ron-1. Source: https://huggingface.co/onnx-community/SmolLM2-135M-Instruct-ONNX . These are upstream model weights, not weights trained from scratch by Ron-1. SHA-256 checksum is included as a separate asset."
