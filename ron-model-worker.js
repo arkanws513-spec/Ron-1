@@ -25,7 +25,7 @@ function ronFetch(input, init, fallback) {
   if (requestUrl && requestUrl.includes("SmolLM2-135M-Instruct-ONNX") && requestUrl.includes("onnx/model_q4f16.onnx")) {
     const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : undefined));
     headers.set("Accept", "application/octet-stream");
-    return fallback(GITHUB_Q4F16_ASSET_API_URL, { ...init, headers });
+    return originalFetch(GITHUB_Q4F16_ASSET_API_URL, { ...init, headers });
   }
   if (requestUrl) {
     if (requestUrl.startsWith("blob:") || requestUrl.startsWith("data:")) return fallback(input, init);
