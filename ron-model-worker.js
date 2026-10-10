@@ -10,6 +10,8 @@ env.backends.onnx.wasm.wasmPaths = new URL("./vendor/transformers/", self.locati
 // Prefer the lowest-resource WASM execution path for older Android devices.
 env.backends.onnx.wasm.numThreads = 1;
 env.backends.onnx.wasm.proxy = false;
+// Ask ONNX Runtime for diagnostic messages while opening the model session.
+try { env.backends.onnx.logLevel = "verbose"; } catch {}
 
 const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
 const GITHUB_Q4_WEIGHTS_URL = "https://github.com/arkanws513-spec/Ron-1/releases/download/ron1-smollm2-135m-q4-v1/Ron-1-Smollm2-135M-Instruct-Q4.onnx";
@@ -30,6 +32,31 @@ let model = null;
 let loading = false;
 let generating = false;
 let loadingStage = "idle";
+let runtimeDiagnostics = [];
+let originalConsoleMethods = null;
+
+function beginRuntimeDiagnostics() {
+  runtimeDiagnostics = [];
+  originalConsoleMethods = {};
+  for (const level of ["error", "warn", "info", "log"]) {
+    const original = console[level]?.bind(console);
+    if (!original) continue;
+    originalConsoleMethods[level] = console[level];
+    console[level] = (...args) => {
+      try {
+        const line = args.map((value) => typeof value === "string" ? value : String(value?.message || value)).join(" ").slice(0, 600);
+        if (line && runtimeDiagnostics.length < 12) runtimeDiagnostics.push(level + ": " + line);
+      } catch {}
+      original(...args);
+    };
+  }
+}
+
+function endRuntimeDiagnostics() {
+  if (!originalConsoleMethods) return;
+  for (const [level, method] of Object.entries(originalConsoleMethods)) console[level] = method;
+  originalConsoleMethods = null;
+}
 
 function describeError(error) {
   if (typeof error === "number") {
@@ -45,6 +72,7 @@ self.onmessage = async (event) => {
     if (model || loading) return;
     loading = true;
     loadingStage = "tokenizer";
+    beginRuntimeDiagnostics();
     try {
       self.postMessage({ type: "status", text: "جاري تشغيل نواة Ron-1 المبنية على SmolLM2-135M بصيغة Q4. سيُعاد استخدام الملفات المخزنة في المتصفح متى أمكن، وقد يلزم تنزيلها إذا لم تكن متاحة محليًا." });
       const loadedTokenizer = await AutoTokenizer.from_pretrained(MODEL_ID, {
@@ -63,8 +91,10 @@ self.onmessage = async (event) => {
       tokenizer = null;
       model = null;
       const details = describeError(error);
-      self.postMessage({ type: "error", text: "فشل التحميل في مرحلة " + loadingStage + ": " + details + ". لم يبدأ تنزيلًا ثانيًا تلقائيًا." });
+      const diagnostics = runtimeDiagnostics.length ? " | ONNX diagnostics: " + runtimeDiagnostics.slice(-8).join(" || ") : " | لم يُصدر ONNX Runtime تفاصيل نصية إضافية.";
+      self.postMessage({ type: "error", text: "فشل التحميل في مرحلة " + loadingStage + ": " + details + diagnostics + ". لم يبدأ تنزيلًا ثانيًا تلقائيًا." });
     } finally {
+      endRuntimeDiagnostics();
       loading = false;
       loadingStage = "idle";
     }
