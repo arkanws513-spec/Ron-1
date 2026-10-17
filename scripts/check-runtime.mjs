@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { Script } from "node:vm";
 
 const html = readFileSync("index.html", "utf8");
 const pages = readFileSync(".github/workflows/pages.yml", "utf8");
 const sw = readFileSync("sw.js", "utf8");
 const server = readFileSync("core/server.py", "utf8");
 const readme = readFileSync("README.md", "utf8");
+
+const inlineScripts = [...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)].map(match => match[1]);
+assert.equal(inlineScripts.length, 1, "Expected exactly one inline application script");
+new Script(inlineScripts[0], { filename: "index.html inline application script" });
 
 assert.match(html, /Ron-1 SmolLM/);
 assert.match(html, /fetch\(apiBase\+'\/health'/);
