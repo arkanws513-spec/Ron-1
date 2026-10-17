@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#10131a">
-<title>Ron-1 | النواة الأصلية</title>
+<title>Ron-1 | SmolLM</title>
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#10131a;color:#f5f7fb;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}main{width:min(760px,100%);background:#181d27;border:1px solid #30394a;border-radius:22px;padding:clamp(16px,4vw,28px);box-shadow:0 20px 60px #0008}h1{margin:0;font-size:clamp(24px,5vw,32px)}.sub{color:#aab3c2;margin:4px 0 14px}.tag{display:inline-block;border:1px solid #39465a;border-radius:999px;padding:4px 10px;font-size:12px;color:#cbd5e1;margin-bottom:12px}#chat{height:min(52vh,520px);min-height:240px;overflow:auto;padding:8px 2px}.m{padding:12px 15px;border-radius:15px;margin:10px 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8}.r{background:#252c39}.u{background:#303b50}form{display:flex;gap:8px;margin-top:12px}input{min-width:0;flex:1;padding:14px;border:1px solid #3b4558;border-radius:14px;background:#252c39;color:#fff;font-size:16px}button{border:0;border-radius:14px;padding:12px 17px;background:#b9d3ff;color:#10131a;font-weight:700;font-size:15px;cursor:pointer}button:disabled{opacity:.55;cursor:wait}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions button.secondary{background:#303b50;color:#f5f7fb;border:1px solid #46536a}.note{text-align:center;color:#aab3c2;font-size:13px;margin-top:12px;line-height:1.7}#status{color:#cbd5e1}.warn{color:#ffd38a!important}label{display:block;font-size:13px;color:#cbd5e1;margin:10px 0 5px}.api-row{display:flex;gap:8px}.api-row input{direction:ltr;text-align:left}a{color:#b9d3ff}
 </style>
@@ -12,15 +12,15 @@
 <body>
 <main>
 <h1>🤖 Ron-1</h1>
-<div class="sub">واجهة رون — متصلة بالنواة الأصلية المستقلة</div>
-<div class="tag">Ron-1 Native Core · Transformer خاص بالمشروع</div>
-<div id="chat" aria-live="polite"><div class="m r">أهلًا بك. هذه الواجهة لا تحمّل SmolLM2 ولا تستخدم أوزانه. ستتصل فقط بخدمة النواة الأصلية لرون-1 عند إعداد عنوانها وتوفير نقطة تحقق مدرّبة.</div></div>
-<label for="api">عنوان خدمة النواة الأصلية (API)</label>
-<div class="api-row"><input id="api" autocomplete="url" placeholder="https://عنوان-خدمة-رون" aria-label="عنوان خدمة النواة الأصلية"><button id="connect" type="button">اتصال</button></div>
+<div class="sub">واجهة رون — تعمل بأوزان نموذج SmolLM مسبق التدريب</div>
+<div class="tag">Ron-1 · SmolLM multilingual model</div>
+<div id="chat" aria-live="polite"><div class="m r">أهلًا بك. هذه واجهة رون-1، وتتصل بخدمة الاستدلال التي تستخدم أوزان SmolLM مسبقة التدريب. يجب تشغيل خدمة API بصورة منفصلة.</div></div>
+<label for="api">عنوان خدمة رون (API)</label>
+<div class="api-row"><input id="api" autocomplete="url" placeholder="https://عنوان-خدمة-رون" aria-label="عنوان خدمة رون"><button id="connect" type="button">اتصال</button></div>
 <div class="actions"><button id="clear" class="secondary" type="button">محادثة جديدة</button></div>
 <form id="form"><input id="msg" autocomplete="off" maxlength="2000" placeholder="اكتب رسالتك إلى رون…" aria-label="رسالتك"><button id="send" type="submit" disabled>إرسال</button></form>
-<div class="note" id="status">لم يتم إعداد خدمة النواة بعد. أدخل عنوان خدمة Ron-1 الأصلية واضغط «اتصال».</div>
-<div class="note">لا يوجد أي تحويل تلقائي إلى SmolLM2 أو إلى مزوّد ذكاء اصطناعي خارجي. يجب تشغيل خدمة النواة الأصلية وتوفير أوزان Ron-1 المدرّبة قبل توليد إجابات.</div>
+<div class="note" id="status">لم يتم إعداد خدمة الذكاء الاصطناعي بعد. أدخل عنوان API المنشور واضغط «اتصال».</div>
+<div class="note">تستخدم الخدمة أوزان SmolLM المنشورة على Hugging Face. قد يستغرق أول اتصال وقتًا لتنزيل النموذج، وتحتاج الاستضافة إلى ذاكرة كافية.</div>
 </main>
 <script>
 const chat=document.querySelector('#chat'),input=document.querySelector('#msg'),send=document.querySelector('#send'),status=document.querySelector('#status'),form=document.querySelector('#form'),apiInput=document.querySelector('#api'),connectButton=document.querySelector('#connect'),clearButton=document.querySelector('#clear');
@@ -40,12 +40,12 @@ async function connect(){
   try{
     const response=await fetch(apiBase+'/health',{method:'GET',headers:{Accept:'application/json'},cache:'no-store'});
     const data=await response.json().catch(()=>({}));
+    if(data.model!=='Ron-1 SmolLM')throw new Error('الخدمة التي تم الاتصال بها ليست خدمة Ron-1 SmolLM.');
+    if(!data.ready)throw new Error(data.message||data.error||('خدمة النموذج غير جاهزة (HTTP '+response.status+').'));
     if(!response.ok)throw new Error(data.error||('HTTP '+response.status));
-    if(data.model!=='Ron-1 Native Core')throw new Error('الخدمة التي تم الاتصال بها ليست نواة Ron-1 الأصلية.');
     localStorage.setItem(API_KEY,apiBase);
-    if(!data.ready)throw new Error(data.message||'خدمة النواة موجودة، لكن الأوزان الأصلية لم تصبح جاهزة بعد.');
-    ready=true;send.disabled=false;setStatus('تم الاتصال بنواة Ron-1 الأصلية. رقم خطوة التدريب: '+String(data.step||0)+'.');
-    add('r','اتصلت الواجهة بالنواة الأصلية لرون-1.');
+    ready=true;send.disabled=false;setStatus('تم الاتصال بنموذج SmolLM: '+String(data.base_model||'').replace(/^HuggingFaceTB\\//,''));
+    add('r','اتصلت الواجهة بخدمة Ron-1 التي تستخدم أوزان SmolLM.');
   }catch(e){setStatus('تعذر تفعيل النواة: '+(e.message||'فشل الاتصال')+'. تأكد من عنوان الخدمة وحالة الأوزان وإعداد CORS.',true);}
   finally{connectButton.disabled=false;}
 }
@@ -55,14 +55,14 @@ clearButton.addEventListener('click',()=>{history=[];try{localStorage.removeItem
 form.addEventListener('submit',async e=>{
   e.preventDefault();const message=input.value.trim();if(!message||!ready||busy)return;
   input.value='';add('u',message);history.push({role:'user',content:message});save();busy=true;send.disabled=true;connectButton.disabled=true;
-  const bubble=add('r','رون يعالج الرسالة عبر النواة الأصلية…');setStatus('يجري التوليد بواسطة Ron-1 Native Core…');
+  const bubble=add('r','رون يجهز الرد باستخدام أوزان SmolLM…');setStatus('يجري توليد الرد بواسطة Ron-1 SmolLM…');
   try{
     const response=await fetch(apiBase+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({message:message,history:history.slice(-10)})});
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||data.message||('HTTP '+response.status));
-    if(data.model!=='Ron-1 Native Core'||typeof data.reply!=='string')throw new Error('استجابة غير متوافقة مع بروتوكول نواة Ron-1.');
-    bubble.textContent=data.reply;history.push({role:'assistant',content:data.reply});save();setStatus('اكتمل الرد من النواة الأصلية.');
-  }catch(e){bubble.textContent='لم يتم توليد رد.';setStatus('فشل التوليد من النواة الأصلية: '+(e.message||'خطأ اتصال'),true);}
+    if(data.model!=='Ron-1 SmolLM'||typeof data.reply!=='string')throw new Error('استجابة غير متوافقة مع خدمة Ron-1 SmolLM.');
+    bubble.textContent=data.reply;history.push({role:'assistant',content:data.reply});save();setStatus('اكتمل الرد من نموذج SmolLM.');
+  }catch(e){bubble.textContent='لم يتم توليد رد.';setStatus('فشل التوليد من نموذج SmolLM: '+(e.message||'خطأ اتصال'),true);}
   finally{busy=false;send.disabled=!ready;connectButton.disabled=false;}
 });
 restore();
