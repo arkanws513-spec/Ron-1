@@ -8,7 +8,7 @@ const sw = readFileSync("sw.js", "utf8");
 const server = readFileSync("core/server.py", "utf8");
 const readme = readFileSync("README.md", "utf8");
 
-const inlineScripts = [...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)].map(match => match[1]);
+const inlineScripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
 assert.equal(inlineScripts.length, 1, "Expected exactly one inline application script");
 new Script(inlineScripts[0], { filename: "index.html inline application script" });
 
