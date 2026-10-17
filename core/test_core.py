@@ -33,5 +33,37 @@ class Ron1CoreTests(unittest.TestCase):
         out = self.model.generate(x, max_new_tokens=2, temperature=0)
         self.assertEqual(tuple(out.shape), (1, 5))
 
+    def test_generation_refuses_untrained_checkpoint(self):
+        from generate import load_trained_model
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "untrained.pt"
+            torch.save({
+                "format": "ron1-native-state-dict-v1",
+                "trained": False,
+                "step": 0,
+                "config": self.config,
+                "state_dict": self.model.state_dict(),
+            }, path)
+            with self.assertRaisesRegex(SystemExit, "untrained weights"):
+                load_trained_model(path)
+
+    def test_generation_loads_explicitly_trained_checkpoint(self):
+        from generate import load_trained_model
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "trained.pt"
+            torch.save({
+                "format": "ron1-native-state-dict-v1",
+                "trained": True,
+                "step": 1,
+                "config": self.config,
+                "state_dict": self.model.state_dict(),
+            }, path)
+            loaded_model, tokenizer, checkpoint = load_trained_model(path)
+            self.assertEqual(checkpoint["step"], 1)
+            self.assertIsInstance(tokenizer, ByteTokenizer)
+            self.assertFalse(loaded_model.training)
+
 if __name__ == "__main__":
     unittest.main()
