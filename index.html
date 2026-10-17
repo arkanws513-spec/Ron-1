@@ -44,7 +44,7 @@ async function connect(){
     if(!data.ready)throw new Error(data.message||data.error||('خدمة النموذج غير جاهزة (HTTP '+response.status+').'));
     if(!response.ok)throw new Error(data.error||('HTTP '+response.status));
     localStorage.setItem(API_KEY,apiBase);
-    ready=true;send.disabled=false;setStatus('تم الاتصال بنموذج SmolLM: '+String(data.base_model||'').replace(/^HuggingFaceTB\\//,''));
+    ready=true;send.disabled=false;setStatus('تم الاتصال بنموذج SmolLM: '+String(data.base_model||'').replace(/^HuggingFaceTB\//,''));
     add('r','اتصلت الواجهة بخدمة Ron-1 التي تستخدم أوزان SmolLM.');
   }catch(e){setStatus('تعذر تفعيل النواة: '+(e.message||'فشل الاتصال')+'. تأكد من عنوان الخدمة وحالة الأوزان وإعداد CORS.',true);}
   finally{connectButton.disabled=false;}
