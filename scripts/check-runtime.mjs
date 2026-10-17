@@ -29,5 +29,5 @@ assert.doesNotMatch(pages, /curl.*huggingface|onnx\/model_q4|ron1-q4|cp -R vendo
 assert.match(sw, /ron1-smollm-ui-v2/);
 assert.doesNotMatch(sw, /weights|models-v2|vendor\/transformers/i);
 assert.match(readme, /pretrained SmolLM weights/);
-assert.match(readme, /does not itself deploy a public inference API|API must be hosted separately/i);
+assert.match(readme, /GitHub Pages only publishes|API must be hosted separately/i);
 console.log("Ron-1 SmolLM runtime separation checks passed.");
