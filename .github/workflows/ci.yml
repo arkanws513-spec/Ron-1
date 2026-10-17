@@ -4,6 +4,8 @@ on:
     branches: [main, ron1-native-core-bootstrap]
   pull_request:
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   check-native-core:
     runs-on: ubuntu-latest
