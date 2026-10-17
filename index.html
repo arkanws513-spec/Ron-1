@@ -2,70 +2,203 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#10131a">
-<title>Ron-1 | النواة الأصلية</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050714">
+<meta name="description" content="RON-1 — واجهة عربية وإنجليزية لمساعد الذكاء الاصطناعي">
+<title>رون-1 | RON-1 AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Orbitron:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#10131a;color:#f5f7fb;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}main{width:min(760px,100%);background:#181d27;border:1px solid #30394a;border-radius:22px;padding:clamp(16px,4vw,28px);box-shadow:0 20px 60px #0008}h1{margin:0;font-size:clamp(24px,5vw,32px)}.sub{color:#aab3c2;margin:4px 0 14px}.tag{display:inline-block;border:1px solid #39465a;border-radius:999px;padding:4px 10px;font-size:12px;color:#cbd5e1;margin-bottom:12px}#chat{height:min(52vh,520px);min-height:240px;overflow:auto;padding:8px 2px}.m{padding:12px 15px;border-radius:15px;margin:10px 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8}.r{background:#252c39}.u{background:#303b50}form{display:flex;gap:8px;margin-top:12px}input{min-width:0;flex:1;padding:14px;border:1px solid #3b4558;border-radius:14px;background:#252c39;color:#fff;font-size:16px}button{border:0;border-radius:14px;padding:12px 17px;background:#b9d3ff;color:#10131a;font-weight:700;font-size:15px;cursor:pointer}button:disabled{opacity:.55;cursor:wait}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions button.secondary{background:#303b50;color:#f5f7fb;border:1px solid #46536a}.note{text-align:center;color:#aab3c2;font-size:13px;margin-top:12px;line-height:1.7}#status{color:#cbd5e1}.warn{color:#ffd38a!important}label{display:block;font-size:13px;color:#cbd5e1;margin:10px 0 5px}.api-row{display:flex;gap:8px}.api-row input{direction:ltr;text-align:left}a{color:#b9d3ff}
+:root{color-scheme:dark;--bg:#050714;--panel:rgba(11,18,38,.76);--panel2:rgba(16,24,48,.9);--line:rgba(0,240,255,.22);--cyan:#00f0ff;--purple:#9b5cff;--pink:#ff4ca4;--text:#f3f7ff;--muted:#92a1bd;--good:#5fffb0;--danger:#ff8caa;--shadow:0 24px 90px #0009}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}body{font-family:'Cairo',system-ui,sans-serif;min-height:100svh;overflow-x:hidden;background:radial-gradient(ellipse at 14% 10%,#112c50 0,transparent 34%),radial-gradient(ellipse at 88% 85%,#24103e 0,transparent 35%),#050714}button,input,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}button:disabled{opacity:.55;cursor:wait}.en-font,.latin{font-family:'Orbitron','Outfit',sans-serif}.app-shell{position:relative;isolation:isolate;width:min(100%,1180px);min-height:100svh;margin:auto;padding:22px;display:flex;flex-direction:column}.app-shell:before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background-image:linear-gradient(#00f0ff09 1px,transparent 1px),linear-gradient(90deg,#00f0ff09 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(to bottom,#000,transparent 95%)}#particles-canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:-1;opacity:.62}.glass{background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 14px 44px #0004,inset 0 0 25px #00f0ff05}.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;z-index:3}.brand{display:flex;align-items:center;gap:12px}.brand-mark{width:45px;height:45px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(145deg,#0c3448,#171033);border:1px solid #00f0ff77;box-shadow:0 0 28px #00f0ff22}.brand-mark svg{width:31px;height:31px}.brand-title{font-size:16px;font-weight:900;letter-spacing:.03em;line-height:1.25}.brand-sub{font:10px 'Orbitron',sans-serif;color:var(--muted);letter-spacing:.16em;margin-top:4px}.top-actions{display:flex;gap:8px;align-items:center}.status-pill,.icon-btn,.lang-btn{border:1px solid var(--line);background:#081225c9;color:var(--text);border-radius:13px;padding:10px 13px}.status-pill{display:flex;align-items:center;gap:9px;font-size:12px;color:#b9c7df}.status-dot{width:8px;height:8px;flex:none;border-radius:50%;background:#8290a9;box-shadow:0 0 0 4px #8290a91a}.status-dot.online{background:var(--good);box-shadow:0 0 0 4px #5fffb018,0 0 14px #5fffb0aa}.status-dot.loading{background:#ffd166;box-shadow:0 0 0 4px #ffd16618}.lang-btn{font-size:12px;font-weight:800;transition:.2s}.lang-btn:hover,.icon-btn:hover{border-color:var(--cyan);color:var(--cyan)}.screen{display:none;flex:1;min-height:0;animation:enter .45s ease both}.screen.active{display:flex}@keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.splash{flex-direction:column;align-items:center;justify-content:center;padding:36px 0 22px;text-align:center}.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.9fr);align-items:center;gap:38px;width:100%;max-width:1000px;margin:auto}.hero-copy{text-align:start}.eyebrow{display:inline-flex;align-items:center;gap:9px;padding:8px 13px;border-radius:999px;border:1px solid #00f0ff3c;background:#00f0ff0a;color:#8ef8ff;font-size:11px;letter-spacing:.07em}.eyebrow:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}.hero-title{margin:20px 0 8px;font-size:clamp(48px,8vw,86px);font-weight:900;line-height:1.03;letter-spacing:-.04em}.hero-title .ar{display:block;background:linear-gradient(120deg,#fff 15%,#8ef8ff 48%,#bba0ff 85%);color:transparent;background-clip:text;-webkit-background-clip:text}.hero-title .en{display:block;font:700 clamp(25px,4vw,42px) 'Orbitron',sans-serif;letter-spacing:.13em;color:var(--cyan);margin-top:12px;text-shadow:0 0 30px #00f0ff44}.hero-description{max-width:490px;color:#aab8d1;line-height:2;font-size:15px;margin:18px 0 24px}.hero-actions{display:flex;gap:12px;flex-wrap:wrap}.primary-btn{position:relative;overflow:hidden;border:0;border-radius:15px;padding:15px 22px;color:#04101a;background:linear-gradient(110deg,#00f0ff,#8a70ff 65%,#ff4ca4);font-weight:900;box-shadow:0 0 28px #00f0ff2c;transition:transform .2s,box-shadow .2s}.primary-btn:hover{transform:translateY(-2px);box-shadow:0 0 36px #00f0ff55}.secondary-btn{border:1px solid #50617c;background:#101a30;color:#eaf4ff;border-radius:15px;padding:14px 19px;font-weight:700}.secondary-btn:hover{border-color:var(--cyan)}.feature-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:#8e9db8;font-size:11px}.feature-row span{display:inline-flex;align-items:center;gap:7px}.feature-row b{color:#c7faff;font-weight:700}.robot-stage{min-height:440px;display:grid;place-items:center;position:relative;isolation:isolate}.robot-halo{position:absolute;width:min(94%,420px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#00f0ff19 0,transparent 58%);border:1px solid #00f0ff17;box-shadow:inset 0 0 70px #00f0ff08,0 0 70px #8a2be20a;animation:breathe 5s ease-in-out infinite}.ring{position:absolute;border:1px solid #00f0ff42;border-radius:50%;width:80%;aspect-ratio:1;transform:rotateX(65deg);animation:orbit 20s linear infinite}.ring.r2{width:94%;border-color:#9b5cff66;transform:rotateX(70deg) rotateZ(40deg);animation-duration:27s;animation-direction:reverse}.ring.r3{width:68%;border-style:dashed;border-color:#00f0ff55;transform:rotateY(60deg) rotateX(25deg);animation-duration:16s}.robot-svg{position:relative;width:min(85%,340px);filter:drop-shadow(0 0 25px #00f0ff22);animation:robotFloat 6s ease-in-out infinite}.hud-label{position:absolute;font:10px 'Orbitron',sans-serif;color:#83f7ff;letter-spacing:.08em;border:1px solid #00f0ff38;background:#071326c9;padding:8px 10px;border-radius:9px}.hud-label.left{left:0;top:24%}.hud-label.right{right:0;bottom:23%;color:#c2a7ff;border-color:#9b5cff55}.hud-tick{position:absolute;width:48px;height:48px;border-color:#00f0ff99;border-style:solid;opacity:.7}.hud-tick.tl{top:10%;left:7%;border-width:1px 0 0 1px}.hud-tick.br{bottom:10%;right:7%;border-width:0 1px 1px 0}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:1000px;margin:14px auto 0}.metric{padding:14px 16px;border-radius:16px;text-align:start}.metric-label{font-size:11px;color:var(--muted)}.metric-value{font:600 13px 'Orbitron',sans-serif;color:#dffcff;margin-top:8px}.metric-value small{font:11px 'Cairo',sans-serif;color:var(--muted)}.bar{height:3px;border-radius:4px;background:#27314a;margin-top:10px;overflow:hidden}.bar i{display:block;width:72%;height:100%;background:linear-gradient(90deg,var(--cyan),var(--purple));border-radius:4px}.footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#64728d;font-size:10px;padding:16px 2px 0}.footer span{display:flex;align-items:center;gap:7px}.chat-screen{flex-direction:column;max-width:930px;width:100%;margin:22px auto 0;min-height:0;height:calc(100svh - 125px)}.chat-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 17px;border-radius:18px}.chat-identity{display:flex;align-items:center;gap:12px}.mini-avatar{width:43px;height:43px;display:grid;place-items:center;border-radius:14px;background:linear-gradient(145deg,#0d394b,#1c1439);border:1px solid #00f0ff70}.mini-avatar svg{width:30px;height:30px}.chat-name{font-weight:900}.chat-model{font:10px 'Orbitron',sans-serif;color:var(--cyan);letter-spacing:.08em;margin-top:3px}.chat-state{font-size:11px;color:var(--muted);margin-top:4px}.chat-head-actions{display:flex;gap:8px}.chat-body{flex:1;min-height:180px;overflow:auto;margin:12px 0;padding:22px clamp(10px,3vw,26px);border-radius:20px;scroll-behavior:smooth}.welcome{display:flex;align-items:flex-start;gap:12px;max-width:700px;margin:12px auto 24px}.welcome-icon{width:35px;height:35px;flex:none;border-radius:11px;display:grid;place-items:center;color:var(--cyan);border:1px solid #00f0ff44;background:#00f0ff0c;font:10px 'Orbitron',sans-serif}.welcome-copy{padding:15px 17px;border:1px solid #00f0ff24;background:linear-gradient(120deg,#00f0ff09,#9b5cff08);border-radius:4px 18px 18px 18px;line-height:1.9;color:#dbe6f8;font-size:14px}.message{display:flex;gap:10px;margin:16px 0;align-items:flex-start;animation:enter .25s ease both}.message.user{flex-direction:row-reverse}.message-avatar{width:32px;height:32px;flex:none;border-radius:10px;display:grid;place-items:center;font:9px 'Orbitron',sans-serif;border:1px solid #00f0ff35;color:var(--cyan);background:#00f0ff0c}.message.user .message-avatar{border-color:#9b5cff55;color:#d5baff;background:#9b5cff12}.message-bubble{max-width:min(82%,700px);padding:12px 15px;border:1px solid #293852;background:#0d172b;border-radius:4px 16px 16px 16px;line-height:1.9;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}.message.user .message-bubble{background:linear-gradient(125deg,#34225a,#1d2440);border-color:#7954a966;border-radius:16px 4px 16px 16px}.message-time{font-size:9px;color:#63728e;margin-top:7px}.typing{display:inline-flex;gap:4px;align-items:center;height:18px}.typing i{width:5px;height:5px;border-radius:50%;background:var(--cyan);animation:typing 1s ease infinite}.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}.quick-prompts{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;scrollbar-width:thin}.quick-btn{white-space:nowrap;border:1px solid #33445e;background:#0b1528;color:#a9eefa;padding:9px 12px;border-radius:12px;font-size:11px;transition:.2s}.quick-btn:hover{border-color:var(--cyan);background:#00f0ff0d}.composer{padding:10px;border-radius:19px;display:flex;gap:10px;align-items:flex-end}.composer textarea{min-width:0;flex:1;resize:none;max-height:140px;min-height:48px;background:transparent;color:var(--text);border:0;outline:0;padding:12px 10px;line-height:1.7;font-size:14px}.composer textarea::placeholder{color:#6f7f9d}.send-btn{width:48px;height:48px;flex:none;display:grid;place-items:center;border:0;border-radius:14px;background:linear-gradient(135deg,var(--cyan),#8e80ff);color:#06101b;font-size:19px;box-shadow:0 0 20px #00f0ff1b}.send-btn:hover{filter:brightness(1.12)}.send-btn:disabled{filter:grayscale(.6)}.connection-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 3px 0;color:#71809c;font-size:10px}.connection-row button{border:0;background:transparent;color:#a7dff1;text-decoration:underline;font-size:10px;padding:3px}.notice{font-size:11px;color:#72819d;line-height:1.7;text-align:center;margin:8px 0}.api-dialog{position:fixed;inset:0;z-index:50;display:none;place-items:center;padding:18px;background:#02040bd9;backdrop-filter:blur(10px)}.api-dialog.open{display:grid}.dialog-card{width:min(100%,480px);padding:23px;border-radius:22px}.dialog-title{font-size:20px;font-weight:900;margin:0 0 7px}.dialog-copy{color:var(--muted);font-size:12px;line-height:1.8;margin:0 0 18px}.field-label{display:block;color:#b8c6df;font-size:12px;margin-bottom:7px}.api-input{width:100%;padding:13px 14px;border:1px solid #354762;background:#070e1d;border-radius:12px;color:#fff;direction:ltr;text-align:left;font:12px 'Outfit',sans-serif}.dialog-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:16px}.dialog-status{font-size:11px;line-height:1.7;margin-top:12px;color:var(--muted);overflow-wrap:anywhere}.dialog-status.error{color:var(--danger)}.hidden{display:none!important}
+@keyframes orbit{to{transform:rotateX(65deg) rotateZ(360deg)}}@keyframes breathe{0%,100%{opacity:.7;transform:scale(.98)}50%{opacity:1;transform:scale(1.03)}}@keyframes robotFloat{0%,100%{transform:translateY(3px)}50%{transform:translateY(-10px)}}@keyframes typing{0%,60%,100%{opacity:.35;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
+@media(min-width:760px){.app-shell{min-height:100svh}.splash{padding-top:50px}.chat-screen{height:calc(100svh - 130px);min-height:500px}}@media(max-width:759px){.app-shell{padding:15px;min-height:100svh}.topbar{align-items:flex-start}.brand-mark{width:40px;height:40px}.status-pill{padding:8px 10px;font-size:10px}.hero-grid{grid-template-columns:1fr;gap:4px}.hero-copy{text-align:center;order:2}.hero-description{margin:15px auto 21px;font-size:13px}.hero-actions{justify-content:center}.feature-row{justify-content:center;margin-top:20px}.robot-stage{min-height:310px;order:1;margin-top:15px}.robot-halo{width:280px}.robot-svg{width:245px}.ring{width:76%}.ring.r2{width:88%}.ring.r3{width:62%}.hud-label{font-size:8px;padding:6px 7px}.hero-title{margin-top:14px}.metrics{gap:7px}.metric{padding:11px 10px}.metric-label{font-size:9px}.metric-value{font-size:10px}.footer{font-size:9px}.chat-screen{height:calc(100svh - 105px);margin-top:16px}.chat-body{padding:14px 9px}.message-bubble{font-size:13px;max-width:86%}.quick-btn{font-size:10px}.connection-row{font-size:9px}.top-actions{gap:5px}.lang-btn{padding:9px 10px}.status-pill{max-width:140px}}@media(max-width:390px){.brand-sub{font-size:8px}.status-pill{max-width:105px;font-size:9px}.robot-stage{min-height:275px}.robot-svg{width:215px}.hero-title{font-size:48px}.metrics{grid-template-columns:1fr 1fr}.metric:last-child{display:none}.feature-row{gap:10px}.hero-actions>*{flex:1}.chat-head{padding:11px}.chat-state{max-width:170px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
-<main>
-<h1>🤖 Ron-1</h1>
-<div class="sub">واجهة رون — متصلة بالنواة الأصلية المستقلة</div>
-<div class="tag">Ron-1 Native Core · Transformer خاص بالمشروع</div>
-<div id="chat" aria-live="polite"><div class="m r">أهلًا بك. هذه الواجهة لا تحمّل SmolLM2 ولا تستخدم أوزانه. ستتصل فقط بخدمة النواة الأصلية لرون-1 عند إعداد عنوانها وتوفير نقطة تحقق مدرّبة.</div></div>
-<label for="api">عنوان خدمة النواة الأصلية (API)</label>
-<div class="api-row"><input id="api" autocomplete="url" placeholder="https://عنوان-خدمة-رون" aria-label="عنوان خدمة النواة الأصلية"><button id="connect" type="button">اتصال</button></div>
-<div class="actions"><button id="clear" class="secondary" type="button">محادثة جديدة</button></div>
-<form id="form"><input id="msg" autocomplete="off" maxlength="2000" placeholder="اكتب رسالتك إلى رون…" aria-label="رسالتك"><button id="send" type="submit" disabled>إرسال</button></form>
-<div class="note" id="status">لم يتم إعداد خدمة النواة بعد. أدخل عنوان خدمة Ron-1 الأصلية واضغط «اتصال».</div>
-<div class="note">لا يوجد أي تحويل تلقائي إلى SmolLM2 أو إلى مزوّد ذكاء اصطناعي خارجي. يجب تشغيل خدمة النواة الأصلية وتوفير أوزان Ron-1 المدرّبة قبل توليد إجابات.</div>
+<canvas id="particles-canvas" aria-hidden="true"></canvas>
+<div class="app-shell">
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 40 40" fill="none"><path d="M20 3 33 10.5V26L20 34 7 26V10.5L20 3Z" stroke="#00f0ff" stroke-width="1.5"/><path d="M13 25V15h4.3l5.4 7v-7H27v10h-4.3l-5.4-7v7H13Z" fill="#e8ffff"/><path d="M20 34v3M7 10.5 3.5 8M33 10.5 36.5 8" stroke="#9b5cff" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </div>
+    <div><div class="brand-title">رون-1 <span class="latin">/ RON-1</span></div><div class="brand-sub">INTELLIGENCE INTERFACE</div></div>
+  </div>
+  <div class="top-actions">
+    <div class="status-pill"><span id="status-dot" class="status-dot"></span><span id="sys-status-text" data-ar="الواجهة جاهزة" data-en="INTERFACE READY">الواجهة جاهزة</span></div>
+    <button class="lang-btn" id="lang-toggle-btn" type="button">◉ <span id="lang-btn-label">العربية / EN</span></button>
+  </div>
+</header>
+
+<main id="splash-screen" class="screen splash active">
+  <div class="hero-grid">
+    <section class="hero-copy">
+      <div class="eyebrow" data-ar="جيل جديد من المساعدات الذكية" data-en="A NEW GENERATION OF AI">جيل جديد من المساعدات الذكية</div>
+      <h1 class="hero-title"><span class="ar">رون-1</span><span class="en">RON-1</span></h1>
+      <p class="hero-description" id="app-subtitle" data-ar="واجهة ذكية بتصميم مستقبلي، صُممت لتكون بوابتك إلى نواة رون-1. ابدأ محادثتك بالعربية أو الإنجليزية." data-en="A futuristic AI interface designed as your gateway to the RON-1 core. Start a conversation in Arabic or English.">واجهة ذكية بتصميم مستقبلي، صُممت لتكون بوابتك إلى نواة رون-1. ابدأ محادثتك بالعربية أو الإنجليزية.</p>
+      <div class="hero-actions">
+        <button id="start-btn" class="primary-btn" type="button"><span id="start-btn-text" data-ar="ابدأ المحادثة" data-en="START CONVERSATION">ابدأ المحادثة</span> <span aria-hidden="true">↙</span></button>
+        <button id="setup-btn" class="secondary-btn" type="button"><span data-ar="إعداد اتصال النواة" data-en="CONNECT CORE">إعداد اتصال النواة</span> ↗</button>
+      </div>
+      <div class="feature-row">
+        <span>◈ <b data-ar="عربي / English" data-en="Arabic / English">عربي / English</b></span>
+        <span>⌘ <b data-ar="اتصال مباشر بالـ API" data-en="Direct API connection">اتصال مباشر بالـ API</b></span>
+        <span>⟡ <b data-ar="سجل محادثة محلي" data-en="Local chat history">سجل محادثة محلي</b></span>
+      </div>
+    </section>
+    <section class="robot-stage" aria-label="RON-1 humanoid AI core illustration">
+      <div class="robot-halo"></div><div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div>
+      <div class="hud-tick tl"></div><div class="hud-tick br"></div>
+      <div class="hud-label left">CORE / 01<br><span style="color:#8fa5c4">RON SYSTEM</span></div>
+      <div class="hud-label right">NEURAL LINK<br><span style="color:#a89aff">STANDBY</span></div>
+      <svg class="robot-svg" viewBox="0 0 360 420" role="img" aria-label="Stylized futuristic humanoid robot">
+        <defs>
+          <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eafcff"/><stop offset=".24" stop-color="#6f91a8"/><stop offset=".48" stop-color="#1c2f49"/><stop offset=".73" stop-color="#a8d3df"/><stop offset="1" stop-color="#24304d"/></linearGradient>
+          <linearGradient id="darkmetal" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#273f5a"/><stop offset=".5" stop-color="#0b1428"/><stop offset="1" stop-color="#496b84"/></linearGradient>
+          <linearGradient id="face" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d8faff"/><stop offset=".45" stop-color="#6389a2"/><stop offset="1" stop-color="#172942"/></linearGradient>
+          <linearGradient id="eye" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".3" stop-color="#00f0ff"/><stop offset="1" stop-color="#477cff"/></linearGradient>
+          <radialGradient id="chestglow"><stop stop-color="#00f0ff" stop-opacity=".65"/><stop offset="1" stop-color="#00f0ff" stop-opacity="0"/></radialGradient>
+          <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <ellipse cx="180" cy="395" rx="100" ry="13" fill="#00f0ff" opacity=".12"/>
+        <!-- shoulder frame and neck -->
+        <path d="M143 151 134 174 111 188 94 219 110 252 137 239 150 204 210 204 223 239 250 252 266 219 249 188 226 174 217 151Z" fill="url(#darkmetal)" stroke="#6eeeff" stroke-opacity=".6" stroke-width="1.5"/>
+        <path d="M156 147h48v43h-48z" fill="url(#metal)" stroke="#9defff" stroke-width="1.5"/>
+        <path d="M164 158h32v27h-32z" fill="#091326" stroke="#00f0ff" stroke-opacity=".8"/>
+        <path d="M170 163v17m10-17v17m10-17v17" stroke="#00f0ff" stroke-width="2" opacity=".8"/>
+        <!-- head outer shell -->
+        <path d="M128 68Q132 34 164 27L196 27Q228 34 232 68L225 122Q220 145 198 157L180 164 162 157Q140 145 135 122Z" fill="url(#metal)" stroke="#a4f7ff" stroke-width="2"/>
+        <path d="M140 69Q145 43 166 39H194Q215 43 220 69L214 115Q210 132 192 143L180 148 168 143Q150 132 146 115Z" fill="url(#face)" stroke="#233b58" stroke-width="2"/>
+        <!-- forehead plates -->
+        <path d="M153 50 166 41 180 47 194 41 207 50 202 59 180 55 158 59Z" fill="#13243c" stroke="#00f0ff" stroke-opacity=".7"/>
+        <path d="M180 29v14m-7-7h14" stroke="#00f0ff" stroke-width="2" stroke-linecap="round" filter="url(#glow)"/>
+        <!-- face mask -->
+        <path d="M147 74 164 66 180 70 196 66 213 74 207 105 195 121 180 127 165 121 153 105Z" fill="#0a172a" stroke="#7cdff0" stroke-width="1.4"/>
+        <path d="M157 84 171 79 177 83 174 91 160 94Z" fill="url(#eye)" filter="url(#glow)"/>
+        <path d="M203 84 189 79 183 83 186 91 200 94Z" fill="url(#eye)" filter="url(#glow)"/>
+        <path d="M180 82v23m-8 7 8 4 8-4" stroke="#91eafa" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M161 102 169 108m30-6-8 6" stroke="#00f0ff" stroke-width="1.5" opacity=".75"/>
+        <!-- side ears -->
+        <path d="M129 78 117 88 120 111 137 119M231 78l12 10-3 23-17 8" fill="url(#darkmetal)" stroke="#8defff" stroke-width="2"/>
+        <path d="M124 91h10m-9 7h11m100-7h-10m9 7h-11" stroke="#00f0ff" stroke-width="2"/>
+        <!-- shoulder plates -->
+        <path d="M118 184 81 192 60 219 70 251 105 263 130 238 143 202Z" fill="url(#metal)" stroke="#9cefff" stroke-width="2"/>
+        <path d="M242 184 279 192 300 219 290 251 255 263 230 238 217 202Z" fill="url(#metal)" stroke="#9cefff" stroke-width="2"/>
+        <path d="M79 214 111 203 126 221 108 244 82 240Z" fill="#101d34" stroke="#00f0ff" stroke-opacity=".8"/>
+        <path d="M281 214 249 203 234 221 252 244 278 240Z" fill="#101d34" stroke="#9b5cff" stroke-opacity=".9"/>
+        <path d="M88 220l22-7m-18 16 20-7m157-2 22 7m-18-16-20-7" stroke="#00f0ff" stroke-width="2"/>
+        <!-- torso armor -->
+        <path d="M139 184 159 174H201L221 184 237 225 222 291 204 318H156L138 291 123 225Z" fill="url(#darkmetal)" stroke="#9defff" stroke-width="2"/>
+        <path d="M151 194 165 187H195L209 194 220 224 207 274 196 296H164L153 274 140 224Z" fill="url(#metal)" stroke="#6fdff5" stroke-width="1.5"/>
+        <path d="M160 201h40l9 23-9 28h-40l-9-28Z" fill="#0b172c" stroke="#00f0ff" stroke-width="1.5"/>
+        <circle cx="180" cy="226" r="24" fill="url(#chestglow)"/>
+        <circle cx="180" cy="226" r="13" fill="#071627" stroke="#00f0ff" stroke-width="2" filter="url(#glow)"/>
+        <circle cx="180" cy="226" r="6" fill="#e4ffff"/><path d="M180 205v8m0 26v8m-21-21h8m26 0h8" stroke="#00f0ff" stroke-width="2" stroke-linecap="round"/>
+        <path d="M146 258l17 8m51-8-17 8M154 280l12 7m28-7-12 7" stroke="#182d45" stroke-width="5" stroke-linecap="round"/>
+        <!-- abdomen -->
+        <path d="M157 306h46l-5 39h-36Z" fill="#101b30" stroke="#74dced" stroke-width="1.5"/>
+        <path d="M164 314h32m-30 8h28m-26 8h24" stroke="#00f0ff" stroke-width="2" opacity=".8"/>
+        <!-- arms with joints -->
+        <path d="M78 258 62 281 70 314 91 323 105 306 97 281Z" fill="url(#darkmetal)" stroke="#7be9f8" stroke-width="1.5"/>
+        <circle cx="81" cy="285" r="10" fill="#0b1729" stroke="#00f0ff" stroke-width="2"/><circle cx="81" cy="285" r="4" fill="#00f0ff"/>
+        <path d="M70 314 56 342 66 361 87 355 98 327Z" fill="url(#metal)" stroke="#7be9f8" stroke-width="1.5"/>
+        <path d="M282 258 298 281 290 314 269 323 255 306 263 281Z" fill="url(#darkmetal)" stroke="#7be9f8" stroke-width="1.5"/>
+        <circle cx="279" cy="285" r="10" fill="#0b1729" stroke="#9b5cff" stroke-width="2"/><circle cx="279" cy="285" r="4" fill="#9b5cff"/>
+        <path d="M290 314 304 342 294 361 273 355 262 327Z" fill="url(#metal)" stroke="#9b5cff" stroke-width="1.5"/>
+        <!-- hands -->
+        <path d="M65 357 57 374l8 12 11-3 7-15-8-10Z" fill="url(#darkmetal)" stroke="#80efff" stroke-width="1.5"/>
+        <path d="M295 357 303 374l-8 12-11-3-7-15 8-10Z" fill="url(#darkmetal)" stroke="#80efff" stroke-width="1.5"/>
+        <path d="M63 377l-7 9m15-8-3 11m218-12 7 9m-15-8 3 11" stroke="#00f0ff" stroke-width="2" stroke-linecap="round"/>
+        <!-- small shoulder insignia -->
+        <path d="M103 223l8-5v10l-8 5z" fill="#00f0ff"/><path d="M257 223l-8-5v10l8 5z" fill="#9b5cff"/>
+        <path d="M145 179 153 169m62 10-8-10" stroke="#fff" stroke-opacity=".6" stroke-width="2"/>
+      </svg>
+    </section>
+  </div>
+  <section class="metrics">
+    <div class="metric glass"><div class="metric-label" data-ar="حالة الواجهة" data-en="INTERFACE">حالة الواجهة</div><div class="metric-value" id="metric-interface">READY <small>/ جاهزة</small></div><div class="bar"><i style="width:100%"></i></div></div>
+    <div class="metric glass"><div class="metric-label" data-ar="محرك الاستدلال" data-en="INFERENCE ENGINE">محرك الاستدلال</div><div class="metric-value" id="metric-engine">NOT CONNECTED</div><div class="bar"><i id="engine-bar" style="width:8%;background:#53617c"></i></div></div>
+    <div class="metric glass"><div class="metric-label" data-ar="نموذج المحادثة" data-en="CHAT MODEL">نموذج المحادثة</div><div class="metric-value" id="metric-model">RON-1 / SmolLM</div><div class="bar"><i style="width:70%"></i></div></div>
+  </section>
 </main>
+
+<main id="chat-screen" class="screen chat-screen">
+  <header class="chat-head glass">
+    <div class="chat-identity">
+      <div class="mini-avatar"><svg viewBox="0 0 40 40" fill="none"><path d="M20 4 31 10v14L20 31 9 24V10L20 4Z" stroke="#00f0ff" stroke-width="1.4"/><path d="M13 21v-8h3l8 8v-8h3v8h-3l-8-8v8Z" fill="#e9ffff"/></svg></div>
+      <div><div class="chat-name">رون-1 <span class="latin" style="color:var(--cyan);font-size:11px">RON-1</span></div><div class="chat-model">SMOLLM INFERENCE</div><div class="chat-state" id="chat-status-sub" data-ar="بانتظار الاتصال بالنواة" data-en="AWAITING CORE CONNECTION">بانتظار الاتصال بالنواة</div></div>
+    </div>
+    <div class="chat-head-actions">
+      <button class="icon-btn" id="new-chat-btn" type="button" title="محادثة جديدة" aria-label="محادثة جديدة">＋</button>
+      <button class="icon-btn" id="back-btn" type="button" title="العودة للرئيسية" aria-label="العودة للرئيسية">⌂</button>
+    </div>
+  </header>
+  <section id="chat-messages" class="chat-body glass" aria-live="polite">
+    <div class="welcome" id="welcome-message"><div class="welcome-icon">RON</div><div class="welcome-copy" data-ar="أهلًا بك. أنا رون-1. صُممت هذه الواجهة للاتصال بنواة الاستدلال الحقيقية، ولن أدّعي أن النموذج متصل قبل نجاح فحص الخدمة. اضبط عنوان الـ API ثم ابدأ المحادثة." data-en="Welcome. I’m RON-1. This interface is designed to connect to the real inference core; it will not claim the model is online until the service check succeeds. Configure the API endpoint to begin.">أهلًا بك. أنا رون-1. صُممت هذه الواجهة للاتصال بنواة الاستدلال الحقيقية، ولن أدّعي أن النموذج متصل قبل نجاح فحص الخدمة. اضبط عنوان الـ API ثم ابدأ المحادثة.</div></div>
+  </section>
+  <div class="quick-prompts" id="quick-prompts">
+    <button class="quick-btn" type="button" data-prompt-ar="عرّفني بنفسك باختصار." data-prompt-en="Briefly introduce yourself.">✧ <span data-ar="عرّفني بنفسك" data-en="Introduce yourself">عرّفني بنفسك</span></button>
+    <button class="quick-btn" type="button" data-prompt-ar="ما عاصمة مصر؟" data-prompt-en="What is the capital of Egypt?">⌁ <span data-ar="سؤال سريع" data-en="Quick question">سؤال سريع</span></button>
+    <button class="quick-btn" type="button" data-prompt-ar="اكتب مثالًا برمجيًا بسيطًا واشرحه." data-prompt-en="Write a simple code example and explain it.">⌘ <span data-ar="مساعدة برمجية" data-en="Coding help">مساعدة برمجية</span></button>
+  </div>
+  <form id="form" class="composer glass">
+    <textarea id="msg" rows="1" maxlength="2000" placeholder="اكتب رسالتك إلى رون-1..." aria-label="رسالتك إلى رون-1"></textarea>
+    <button id="send" class="send-btn" type="submit" disabled aria-label="إرسال الرسالة">➤</button>
+  </form>
+  <div class="connection-row"><span id="status" data-ar="النواة غير متصلة — الواجهة فقط جاهزة" data-en="CORE OFFLINE — INTERFACE READY">النواة غير متصلة — الواجهة فقط جاهزة</span><button id="open-settings" type="button" data-ar="إعداد الاتصال" data-en="API SETTINGS">إعداد الاتصال</button></div>
+  <p class="notice" data-ar="المحادثات محفوظة محليًا على هذا الجهاز. لا تُرسل الرسائل إلا إلى عنوان API الذي تختاره." data-en="Chats are saved locally on this device. Messages are sent only to the API endpoint you configure.">المحادثات محفوظة محليًا على هذا الجهاز. لا تُرسل الرسائل إلا إلى عنوان API الذي تختاره.</p>
+</main>
+
+<footer class="footer"><span>◈ RON-1 <span data-ar="واجهة مستقلة" data-en="INDEPENDENT INTERFACE">واجهة مستقلة</span></span><span id="version-text">INTERFACE BUILD 2.5 · AR / EN</span><span>◇ <span data-ar="النواة لا تُعلن جاهزيتها دون فحص" data-en="CORE STATUS IS VERIFIED, NOT ASSUMED">النواة لا تُعلن جاهزيتها دون فحص</span></span></footer>
+</div>
+
+<div class="api-dialog" id="api-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+  <div class="dialog-card glass">
+    <h2 class="dialog-title" id="dialog-title" data-ar="اتصال نواة رون-1" data-en="CONNECT RON-1 CORE">اتصال نواة رون-1</h2>
+    <p class="dialog-copy" data-ar="أدخل عنوان خدمة API التي تشغّل نموذج Ron-1 SmolLM. يجب أن تدعم المسارات /health و /api/chat وتهيئة CORS لعنوان الواجهة." data-en="Enter the API URL running the Ron-1 SmolLM model. It must expose /health and /api/chat and allow this interface origin through CORS.">أدخل عنوان خدمة API التي تشغّل نموذج Ron-1 SmolLM. يجب أن تدعم المسارات /health و /api/chat وتهيئة CORS لعنوان الواجهة.</p>
+    <label class="field-label" for="api" data-ar="عنوان خدمة API" data-en="API BASE URL">عنوان خدمة API</label>
+    <input id="api" class="api-input" autocomplete="url" placeholder="https://your-ron1-api.example.com" inputmode="url">
+    <div class="dialog-status" id="dialog-status" role="status" aria-live="polite" data-ar="لم يتم الاتصال حتى الآن. أدخل العنوان ثم اضغط اختبار الاتصال." data-en="Not connected yet. Enter the URL and test the connection.">لم يتم الاتصال حتى الآن. أدخل العنوان ثم اضغط اختبار الاتصال.</div>
+    <div class="dialog-actions"><button id="cancel-settings" class="secondary-btn" type="button" data-ar="إغلاق" data-en="CLOSE">إغلاق</button><button id="connect" class="primary-btn" type="button" data-ar="اختبار الاتصال" data-en="TEST CONNECTION">اختبار الاتصال</button></div>
+  </div>
+</div>
 <script>
-const chat=document.querySelector('#chat'),input=document.querySelector('#msg'),send=document.querySelector('#send'),status=document.querySelector('#status'),form=document.querySelector('#form'),apiInput=document.querySelector('#api'),connectButton=document.querySelector('#connect'),clearButton=document.querySelector('#clear');
+const $=s=>document.querySelector(s);
+const chat=$('#chat-messages'),input=$('#msg'),send=$('#send'),status=$('#status'),form=$('#form'),apiInput=$('#api'),connectButton=$('#connect'),dialog=$('#api-dialog'),dialogStatus=$('#dialog-status'),dot=$('#status-dot');
 const API_KEY='ron1.nativeApi.v1',CHAT_KEY='ron1.nativeChat.v1';
-const SYSTEM_PROMPT='أنت رون، مساعد عربي مستقل. أجب بوضوح وبأسلوب طبيعي ومفيد. لا تدّع معلومات لا تعرفها.';
-let apiBase='',ready=false,busy=false,history=[];
-function add(cls,text){const d=document.createElement('div');d.className='m '+cls;d.textContent=text;chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;}
-function setStatus(text,warn=false){status.textContent=text;status.classList.toggle('warn',warn);}
-function save(){try{localStorage.setItem(CHAT_KEY,JSON.stringify(history.slice(-30)));}catch{}}
-function normalizeBase(value){return value.trim().replace(/\/+$/,'');}
-function restore(){try{apiBase=normalizeBase(localStorage.getItem(API_KEY)||'');apiInput.value=apiBase;const old=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]');if(Array.isArray(old)){history=old.filter(m=>m&&['user','assistant'].includes(m.role)&&typeof m.content==='string').slice(-30);for(const m of history)add(m.role==='user'?'u':'r',m.content);}}catch{}}
-async function connect(){
-  apiBase=normalizeBase(apiInput.value);ready=false;send.disabled=true;
-  if(!apiBase){setStatus('أدخل عنوان خدمة النواة الأصلية أولًا.',true);return;}
-  let url;try{url=new URL(apiBase);if(!['https:','http:'].includes(url.protocol))throw new Error('protocol');}catch{setStatus('عنوان الخدمة غير صالح. استخدم عنوان HTTP أو HTTPS صحيحًا.',true);return;}
-  connectButton.disabled=true;setStatus('يجري فحص خدمة نواة Ron-1…');
-  try{
-    const response=await fetch(apiBase+'/health',{method:'GET',headers:{Accept:'application/json'},cache:'no-store'});
-    const data=await response.json().catch(()=>({}));
-    if(!response.ok)throw new Error(data.error||('HTTP '+response.status));
-    if(data.model!=='Ron-1 Native Core')throw new Error('الخدمة التي تم الاتصال بها ليست نواة Ron-1 الأصلية.');
-    localStorage.setItem(API_KEY,apiBase);
-    if(!data.ready)throw new Error(data.message||'خدمة النواة موجودة، لكن الأوزان الأصلية لم تصبح جاهزة بعد.');
-    ready=true;send.disabled=false;setStatus('تم الاتصال بنواة Ron-1 الأصلية. رقم خطوة التدريب: '+String(data.step||0)+'.');
-    add('r','اتصلت الواجهة بالنواة الأصلية لرون-1.');
-  }catch(e){setStatus('تعذر تفعيل النواة: '+(e.message||'فشل الاتصال')+'. تأكد من عنوان الخدمة وحالة الأوزان وإعداد CORS.',true);}
-  finally{connectButton.disabled=false;}
-}
-connectButton.addEventListener('click',connect);
-apiInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();connect();}});
-clearButton.addEventListener('click',()=>{history=[];try{localStorage.removeItem(CHAT_KEY);}catch{}chat.innerHTML='';add('r','بدأنا محادثة جديدة.');});
-form.addEventListener('submit',async e=>{
-  e.preventDefault();const message=input.value.trim();if(!message||!ready||busy)return;
-  input.value='';add('u',message);history.push({role:'user',content:message});save();busy=true;send.disabled=true;connectButton.disabled=true;
-  const bubble=add('r','رون يعالج الرسالة عبر النواة الأصلية…');setStatus('يجري التوليد بواسطة Ron-1 Native Core…');
-  try{
-    const response=await fetch(apiBase+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({message:message,history:history.slice(-10)})});
-    const data=await response.json().catch(()=>({}));
-    if(!response.ok)throw new Error(data.error||data.message||('HTTP '+response.status));
-    if(data.model!=='Ron-1 Native Core'||typeof data.reply!=='string')throw new Error('استجابة غير متوافقة مع بروتوكول نواة Ron-1.');
-    bubble.textContent=data.reply;history.push({role:'assistant',content:data.reply});save();setStatus('اكتمل الرد من النواة الأصلية.');
-  }catch(e){bubble.textContent='لم يتم توليد رد.';setStatus('فشل التوليد من النواة الأصلية: '+(e.message||'خطأ اتصال'),true);}
-  finally{busy=false;send.disabled=!ready;connectButton.disabled=false;}
-});
-restore();
+let apiBase='',ready=false,busy=false,history=[],language='ar',connectedModel='SmolLM';
+const SYSTEM_PROMPT='أنت رون، مساعد ذكي ومفيد. أجب بلغة المستخدم، وكن واضحًا ودقيقًا. إذا لم تعرف الإجابة فقل ذلك بوضوح، ولا تخترع معلومات أو تدّع تنفيذ أفعال لم تنفذها.';
+function tr(ar,en){return language==='ar'?ar:en}
+function setStatus(text,kind='idle'){status.textContent=text;status.classList.toggle('warn',kind==='error');dot.className='status-dot'+(kind==='online'?' online':kind==='loading'?' loading':'');$('#metric-engine').textContent=kind==='online'?'CONNECTED':kind==='loading'?'CHECKING…':'NOT CONNECTED';$('#engine-bar').style.width=kind==='online'?'100%':kind==='loading'?'45%':'8%';$('#chat-status-sub').textContent=kind==='online'?tr('النواة متصلة','CORE CONNECTED'):kind==='loading'?tr('يجري فحص النواة','CHECKING CORE'):tr('بانتظار الاتصال بالنواة','AWAITING CORE CONNECTION')}
+function addMessage(role,text){const wrap=document.createElement('div');wrap.className='message '+(role==='user'?'user':'assistant');const avatar=document.createElement('div');avatar.className='message-avatar';avatar.textContent=role==='user'?'YOU':'RON';const body=document.createElement('div');body.className='message-bubble';body.textContent=text;wrap.append(avatar,body);chat.appendChild(wrap);chat.scrollTop=chat.scrollHeight;return body}
+function save(){try{localStorage.setItem(CHAT_KEY,JSON.stringify(history.slice(-30)))}catch{}}
+function normalizeBase(value){return value.trim().replace(/\/+$/,'')}
+function renderHistory(){chat.querySelectorAll('.message').forEach(n=>n.remove());for(const m of history)addMessage(m.role,m.content)}
+function restore(){try{apiBase=normalizeBase(localStorage.getItem(API_KEY)||'');apiInput.value=apiBase;const old=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]');if(Array.isArray(old)){history=old.filter(m=>m&&['user','assistant'].includes(m.role)&&typeof m.content==='string').slice(-30);renderHistory()}}catch{}}
+function openSettings(){dialog.classList.add('open');apiInput.value=apiBase;apiInput.focus()}
+function closeSettings(){dialog.classList.remove('open')}
+function showScreen(which){$('#splash-screen').classList.toggle('active',which==='splash');$('#chat-screen').classList.toggle('active',which==='chat');if(which==='chat')input.focus()}
+function setLanguage(next){language=next;document.documentElement.lang=next;document.documentElement.dir=next==='ar'?'rtl':'ltr';document.querySelectorAll('[data-ar][data-en]').forEach(el=>{const val=el.getAttribute('data-'+next);if(val!==null)el.textContent=val});$('#lang-btn-label').textContent=next==='ar'?'العربية / EN':'EN / العربية';input.placeholder=tr('اكتب رسالتك إلى رون-1...','Message RON-1...');input.setAttribute('aria-label',tr('رسالتك إلى رون-1','Your message to RON-1'));$('#send').setAttribute('aria-label',tr('إرسال الرسالة','Send message'));$('#back-btn').title=tr('العودة للرئيسية','Back to home');$('#new-chat-btn').title=tr('محادثة جديدة','New chat');$('#dialog-status').textContent=ready?tr('تم الاتصال بالنواة بنجاح.','Core connection is active.'):tr('لم يتم الاتصال حتى الآن. أدخل العنوان ثم اضغط اختبار الاتصال.','Not connected yet. Enter the URL and test the connection.');setStatus(ready?tr('النواة متصلة: ','Core connected: ')+connectedModel:tr('النواة غير متصلة — الواجهة فقط جاهزة','CORE OFFLINE — INTERFACE READY'),ready?'online':'idle');}
+async function connect(){apiBase=normalizeBase(apiInput.value);ready=false;send.disabled=true;if(!apiBase){dialogStatus.textContent=tr('أدخل عنوان خدمة النواة أولًا.','Enter the core API URL first.');dialogStatus.classList.add('error');setStatus(tr('النواة غير متصلة — أدخل عنوان API','Core offline — enter an API URL'),'error');return}let url;try{url=new URL(apiBase);if(!['https:','http:'].includes(url.protocol))throw Error('protocol')}catch{dialogStatus.textContent=tr('عنوان الخدمة غير صالح. استخدم عنوان HTTP أو HTTPS صحيحًا.','Invalid URL. Use a valid HTTP or HTTPS address.');dialogStatus.classList.add('error');return}connectButton.disabled=true;dialogStatus.classList.remove('error');dialogStatus.textContent=tr('يجري فحص خدمة Ron-1…','Checking the RON-1 service…');setStatus(tr('يجري فحص نواة Ron-1…','Checking RON-1 core…'),'loading');try{const response=await fetch(apiBase+'/health',{method:'GET',headers:{Accept:'application/json'},cache:'no-store'});const data=await response.json().catch(()=>({}));if(data.model!=='Ron-1 SmolLM')throw Error(tr('الخدمة التي تم الاتصال بها ليست خدمة Ron-1 SmolLM.','This endpoint is not the Ron-1 SmolLM service.'));if(!response.ok||!data.ready)throw Error(data.message||data.error||('HTTP '+response.status));localStorage.setItem(API_KEY,apiBase);connectedModel=String(data.base_model||'SmolLM').replace(/^HuggingFaceTB\//,'');ready=true;send.disabled=false;setStatus(tr('النواة متصلة: ','Core connected: ')+connectedModel,'online');dialogStatus.textContent=tr('نجح الاتصال. تم تحميل أوزان النموذج وأصبحت المحادثة متاحة.','Connected. Model weights are loaded and chat is available.');dialog.classList.remove('open')}catch(e){ready=false;connectedModel='SmolLM';setStatus(tr('تعذر الاتصال بالنواة: ','Could not connect to core: ')+(e.message||'Connection failed'),'error');dialogStatus.textContent=tr('فشل الاتصال: ','Connection failed: ')+(e.message||'Network error')+tr(' — تحقق من العنوان والاستضافة وCORS.',' — check the URL, hosting, and CORS.');dialogStatus.classList.add('error')}finally{connectButton.disabled=false}}
+async function sendMessage(raw){const message=raw.trim();if(!message||!ready||busy)return;input.value='';input.style.height='auto';addMessage('user',message);history.push({role:'user',content:message});save();busy=true;send.disabled=true;connectButton.disabled=true;const bubble=addMessage('assistant','');bubble.innerHTML='<span class="typing" aria-label="Generating"><i></i><i></i><i></i></span>';setStatus(tr('يجري توليد الرد بواسطة Ron-1 SmolLM…','Generating with Ron-1 SmolLM…'),'loading');try{const response=await fetch(apiBase+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({message:message,history:history.slice(-10)})});const data=await response.json().catch(()=>({}));if(!response.ok)throw Error(data.error||data.message||('HTTP '+response.status));if(data.model!=='Ron-1 SmolLM'||typeof data.reply!=='string')throw Error(tr('استجابة غير متوافقة مع خدمة Ron-1 SmolLM.','Incompatible response from Ron-1 SmolLM service.'));bubble.textContent=data.reply;history.push({role:'assistant',content:data.reply});save();setStatus(tr('اكتمل الرد من نموذج SmolLM.','Reply generated by SmolLM.'),'online')}catch(e){bubble.textContent=tr('لم يتم توليد رد. ','No reply generated. ')+(e.message||'Error');setStatus(tr('فشل التوليد من نموذج SmolLM: ','SmolLM generation failed: ')+(e.message||'Error'),'error')}finally{busy=false;send.disabled=!ready;connectButton.disabled=false;chat.scrollTop=chat.scrollHeight}}
+$('#lang-toggle-btn').addEventListener('click',()=>setLanguage(language==='ar'?'en':'ar'));
+$('#start-btn').addEventListener('click',()=>showScreen('chat'));
+$('#setup-btn').addEventListener('click',openSettings);
+$('#open-settings').addEventListener('click',openSettings);
+$('#cancel-settings').addEventListener('click',closeSettings);
+$('#back-btn').addEventListener('click',()=>showScreen('splash'));
+$('#connect').addEventListener('click',connect);
+apiInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();connect()}});
+dialog.addEventListener('click',e=>{if(e.target===dialog)closeSettings()});
+$('#new-chat-btn').addEventListener('click',()=>{history=[];try{localStorage.removeItem(CHAT_KEY)}catch{}chat.querySelectorAll('.welcome').forEach(n=>n.remove());renderHistory();const welcome=document.createElement('div');welcome.className='welcome';const icon=document.createElement('div');icon.className='welcome-icon';icon.textContent='RON';const copy=document.createElement('div');copy.className='welcome-copy';copy.textContent=tr('بدأنا محادثة جديدة. اكتب رسالتك عندما تكون النواة متصلة.','A new chat has started. Send a message when the core is connected.');welcome.append(icon,copy);chat.appendChild(welcome);chat.scrollTop=chat.scrollHeight});
+form.addEventListener('submit',e=>{e.preventDefault();sendMessage(input.value)});
+input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,140)+'px'});
+input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit()}});
+document.querySelectorAll('[data-prompt-ar]').forEach(btn=>btn.addEventListener('click',()=>{const value=btn.getAttribute('data-prompt-'+language)||btn.getAttribute('data-prompt-ar');input.value=value;input.focus();input.dispatchEvent(new Event('input'));if(ready)sendMessage(value)}));
+restore();setLanguage('ar');setStatus(tr('النواة غير متصلة — الواجهة فقط جاهزة','CORE OFFLINE — INTERFACE READY'));if(apiBase){dialogStatus.textContent=tr('تم حفظ عنوان API سابق. اضغط اختبار الاتصال للتحقق من حالته الحالية.','A previously saved API URL is available. Test the connection to verify its current status.')}
+(function particles(){const canvas=$('#particles-canvas'),ctx=canvas.getContext('2d');if(!ctx)return;let w=0,h=0,points=[];function resize(){const dpr=Math.min(window.devicePixelRatio||1,2);w=window.innerWidth;h=window.innerHeight;canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);points=Array.from({length:Math.min(65,Math.floor(w/17))},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.24,vy:(Math.random()-.5)*.24,r:Math.random()*1.5+.35}))}function draw(){ctx.clearRect(0,0,w,h);for(let i=0;i<points.length;i++){const p=points[i];p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>w)p.vx*=-1;if(p.y<0||p.y>h)p.vy*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgba(0,240,255,.55)';ctx.fill();for(let j=i+1;j<points.length;j++){const q=points[j],dx=p.x-q.x,dy=p.y-q.y,d=Math.hypot(dx,dy);if(d<105){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle='rgba(0,240,255,'+(0.12*(1-d/105))+')';ctx.lineWidth=.6;ctx.stroke()}}}if(!matchMedia('(prefers-reduced-motion: reduce)').matches)requestAnimationFrame(draw)}resize();window.addEventListener('resize',resize);draw()})();
 </script>
 </body>
 </html>

@@ -1,44 +1,36 @@
-# Ron-1 Native Core
+# Ron-1 Experimental Native Core
 
-This directory introduces a new decoder-only Transformer architecture owned by the Ron-1 project. It does not load SmolLM2, ONNX weights, a pretrained checkpoint, or a remote inference service. The trainable parameters in `Ron1Core` are Ron-1's own model weights.
+This directory preserves Ron-1's original from-scratch decoder-only Transformer as a research experiment. It is **not** the default conversation engine.
 
-## Honest status
+## Production conversation path
 
-The initializer creates deterministic random starting weights, **not a trained conversational model**. Random weights do not contain language knowledge. Ron-1 must be trained on a curated, appropriately licensed text corpus before it can answer usefully. No training is claimed just because the architecture or checkpoint exists.
+The web interface now connects to `core/server.py`, which loads pretrained SmolLM weights through Hugging Face Transformers. The default model is `HuggingFaceTB/SmolLM3-3B`. See the repository root README and `DEPLOYMENT.md` for the supported runtime.
 
-## Initialize weights
+## Experimental native path
 
-From the repository root:
+The native initializer creates deterministic random starting weights, **not a trained conversational model**. Random weights do not contain language knowledge.
+
+Install dependencies and initialize the experimental checkpoint:
 
 ```bash
 python -m pip install -r core/requirements.txt
 python core/initialize.py
 ```
 
-This creates `core/weights/ron1-native.pt` with Ron-1's state dictionary, architecture configuration, step counter and training flag.
-
-## Train
-
-Provide UTF-8 text files you have permission to use:
+Train this separate experimental architecture on UTF-8 text files you have permission to use:
 
 ```bash
 python core/train.py --data data/ron1 --steps 1000 --batch-size 16
 ```
 
-Continue from an existing checkpoint with `--resume`. Training uses next-token prediction over UTF-8 bytes. Curate data for quality, duplicates, privacy and safety before training.
-
-## Generate locally
-
-```bash
-python core/generate.py --prompt "اكتب تعريفًا بنفسك"
-```
+Training uses next-byte prediction with a small byte tokenizer. Training this native architecture does **not** fine-tune SmolLM and does not change the weights used by the production API.
 
 ## Architecture v0.1
 
-- Decoder-only Transformer, causal self-attention and feed-forward blocks.
-- UTF-8 byte tokenizer (259 IDs) that supports Arabic without an external tokenizer.
+- Decoder-only Transformer with causal self-attention and feed-forward blocks.
+- UTF-8 byte tokenizer (259 IDs).
 - Tied input/output embeddings.
 - Next-token cross-entropy objective and autoregressive generation.
-- Small development configuration; not yet a production-quality LLM.
+- Four layers, dimension 128 and a 256-token context: a small development prototype, not a production-grade LLM.
 
-This is the first native-core implementation. The public interface now targets a separate native inference API; the API refuses to answer until a trained native checkpoint is provided. It never falls back to SmolLM2.
+Do not describe the native model as trained or conversationally capable unless a separate evaluation demonstrates that result.

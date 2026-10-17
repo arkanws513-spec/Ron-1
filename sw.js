@@ -1,4 +1,4 @@
-const CACHE_NAME = "ron1-native-ui-v1";
+const CACHE_NAME = "ron1-smollm-ui-v2";
 self.addEventListener("install", event => event.waitUntil(self.skipWaiting()));
 self.addEventListener("activate", event => event.waitUntil((async () => {
   const keys = await caches.keys();

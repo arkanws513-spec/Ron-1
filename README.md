@@ -1,52 +1,67 @@
 # Ron-1
 
-Ron-1 is being migrated to its own project-owned native Transformer core. The browser interface is a separate static application; the model weights and inference runtime are not bundled into the page.
+Ron-1 is a chat interface and inference service using **pretrained SmolLM weights**. The project no longer requires its tiny randomly initialized native Transformer to answer conversations.
 
-## Current architecture
+## Architecture
 
-- **Interface:** GitHub Pages, served from \`index.html\`.
-- **Native model architecture:** \`core/ron1_core.py\`, a decoder-only Transformer with a UTF-8 byte tokenizer.
-- **Native inference API:** \`core/server.py\`, exposing \`GET /health\` and \`POST /api/chat\`.
-- **Native checkpoint:** supplied separately at \`core/weights/ron1-native.pt\` or via \`RON1_WEIGHTS_PATH\`.
-- **No SmolLM2 fallback:** the interface does not load SmolLM2, ONNX weights, Transformers.js, or a third-party model endpoint.
+- **Web interface:** GitHub Pages at https://arkanws513-spec.github.io/Ron-1/
+- **Inference API:** Python service in `core/server.py`.
+- **Default pretrained model:** [HuggingFaceTB/SmolLM3-3B](https://huggingface.co/HuggingFaceTB/SmolLM3-3B), a 3B-parameter multilingual conversational model whose model card lists Arabic among supported languages.
+- **Model loading:** `transformers` downloads and caches the selected model on the API host. The weights are not committed to this Git repository or included in the browser bundle.
+- **No hidden fallback:** if the selected checkpoint cannot be loaded, health reports not-ready and chat returns an error instead of generating random text.
 
-The Pages workflow intentionally publishes only \`index.html\` and \`sw.js\`. This keeps model weights out of the interface bundle. Enter the deployed native API base URL in the interface and select **Connect**.
+## Run the API
 
-## Important model status
+Use Python 3.11 or newer:
 
-The native architecture and initializer are project-owned, but the initializer creates random weights, not a useful trained language model. The API deliberately refuses to generate responses until it finds a checkpoint with \`trained: true\` and a positive training step. This is intentional: Ron-1 will not silently fall back to SmolLM2 or another provider.
-
-## Initialize and train the native core
-
-Install the dependency:
-
-\`\`\`bash
+```bash
+python -m venv .venv
+# Linux/macOS
+source .venv/bin/activate
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
 python -m pip install -r core/requirements.txt
-python core/initialize.py
-\`\`\`
-
-Train using UTF-8 text files that you have permission to use:
-
-\`\`\`bash
-python core/train.py --data data/ron1 --steps 1000 --batch-size 16
-\`\`\`
-
-The small v0.1 architecture is a development starting point, not yet a production-grade LLM. A curated training corpus and substantial training/evaluation are required before useful conversation should be expected.
-
-## Run the native API locally
-
-\`\`\`bash
 python core/server.py
-\`\`\`
+```
 
-By default it listens on port 8080. Set \`RON1_WEIGHTS_PATH\` to the trained checkpoint location and \`RON1_ALLOWED_ORIGIN\` to the exact interface origin for deployment. The default CORS origin is \`*\` for simple local testing; production deployments should restrict it.
+The first launch downloads model files from Hugging Face, so it needs outbound internet and sufficient disk space/RAM. The default 3B model is substantially larger than the old experimental core; plan for at least 8 GB RAM as a starting point, with more headroom preferred. CPU inference may be slow. A GPU is recommended for a responsive public service.
 
-A Dockerfile is included for a separate API service. The trained checkpoint is intentionally not committed or baked into the image; mount/provide it separately and set \`RON1_WEIGHTS_PATH\`.
+Check `GET /health` and wait for `ready: true`. Send conversations to `POST /api/chat`:
 
-## Deployment
+```json
+{
+  "message": "ما عاصمة مصر؟",
+  "history": [
+    {"role": "user", "content": "أجبني بالعربية"},
+    {"role": "assistant", "content": "حاضر، سأجيب بالعربية."}
+  ]
+}
+```
 
-- Static interface: GitHub Pages.
-- Native inference: a separate Python service using the repository's Dockerfile.
-- The API service must have trained native weights available. The public Pages interface cannot run PyTorch directly.
+## Configuration
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for setup details.
+- `PORT`: service port; defaults to 8080.
+- `HOST`: bind address; defaults to `0.0.0.0`.
+- `RON1_MODEL_ID`: Hugging Face model ID; defaults to `HuggingFaceTB/SmolLM3-3B`.
+- `RON1_ALLOWED_ORIGIN`: exact allowed web origin; defaults to `https://arkanws513-spec.github.io`.
+- `RON1_MAX_INPUT_TOKENS`: maximum prompt tokens; defaults to 2048.
+- `RON1_MAX_NEW_TOKENS`: generation limit; defaults to 256, capped at 512.
+- `RON1_TEMPERATURE` and `RON1_TOP_P`: generation sampling controls.
+- `RON1_TORCH_THREADS`: CPU thread count; defaults to 2.
+- `RON1_SYSTEM_PROMPT`: optional system instruction.
+
+The model uses its tokenizer's chat template when available and carries bounded recent conversation history. Generation is serialized to reduce RAM spikes on small CPU hosts.
+
+## Deploy
+
+Build and run the included Docker image as a separate API service. Make sure the host has enough RAM and outbound access to download the model. Mount a persistent volume at `/data/huggingface` to avoid downloading model files again after every restart, if the host supports persistent storage. Set `RON1_ALLOWED_ORIGIN` to the exact deployed interface origin if you use a different URL.
+
+GitHub Pages only publishes `index.html` and `sw.js`; it cannot run PyTorch or host the inference service. Enter the API base URL in the page and press **اتصال**.
+
+## About the original native core
+
+`core/ron1_core.py`, `core/initialize.py`, and `core/train.py` remain available as an experimental from-scratch research path. Its small random initialization is **not** the conversational model used by the API. Training that experimental model does not fine-tune SmolLM.
+
+## Limitations
+
+SmolLM is a compact model, not GPT-3-class intelligence. It can make mistakes and Arabic quality varies by task. A reliable “professional” assistant still needs a fixed Arabic/English evaluation set, tested deployment hardware, and task-specific fine-tuning if evaluation shows it is needed. The API integration alone is not proof of quality or a claim that deployment is already live.

@@ -1,94 +1,143 @@
-"""HTTP API for Ron-1's native, project-owned Transformer core."""
+"""Ron-1 inference API powered by pretrained SmolLM weights."""
 import json
 import os
-import sys
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
 
 import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
-CORE_DIR = Path(__file__).resolve().parent
-ROOT_DIR = CORE_DIR.parent
-sys.path.insert(0, str(CORE_DIR))
-from ron1_core import ByteTokenizer, Ron1Core, load_config  # noqa: E402
-
-WEIGHTS_PATH = Path(os.environ.get("RON1_WEIGHTS_PATH", str(CORE_DIR / "weights" / "ron1-native.pt")))
-ALLOWED_ORIGIN = os.environ.get("RON1_ALLOWED_ORIGIN", "*")
+MODEL_ID = os.environ.get("RON1_MODEL_ID", "HuggingFaceTB/SmolLM3-3B")
+MODEL_NAME = "Ron-1 SmolLM"
+ALLOWED_ORIGIN = os.environ.get("RON1_ALLOWED_ORIGIN", "https://arkanws513-spec.github.io")
 MAX_BODY_BYTES = 64 * 1024
-MAX_NEW_TOKENS = int(os.environ.get("RON1_MAX_NEW_TOKENS", "96"))
-MODEL_NAME = "Ron-1 Native Core"
-_cached_model = None
-_cached_mtime = None
-_cached_step = 0
-_cached_error = "لم يتم العثور على ملف أوزان النواة الأصلية."
+MAX_INPUT_TOKENS = max(128, int(os.environ.get("RON1_MAX_INPUT_TOKENS", "2048")))
+MAX_NEW_TOKENS = max(16, min(int(os.environ.get("RON1_MAX_NEW_TOKENS", "256")), 512))
 torch.set_num_threads(max(1, int(os.environ.get("RON1_TORCH_THREADS", "2"))))
+SYSTEM_PROMPT = os.environ.get(
+    "RON1_SYSTEM_PROMPT",
+    "أنت رون، مساعد ذكي ومفيد. أجب بلغة المستخدم، وكن واضحًا ودقيقًا. "
+    "إذا لم تعرف الإجابة فقل ذلك بوضوح، ولا تخترع معلومات أو تدّع تنفيذ أفعال لم تنفذها.",
+)
+
+_model = None
+_tokenizer = None
+_load_error = ""
+_load_lock = threading.Lock()
+_generation_lock = threading.Lock()
 
 
 def get_model():
-    global _cached_model, _cached_mtime, _cached_step, _cached_error
-    try:
-        if not WEIGHTS_PATH.is_file():
-            _cached_error = "ملف أوزان Ron-1 الأصلية غير موجود. درّب النواة أولًا."
-            return None
-        mtime = WEIGHTS_PATH.stat().st_mtime_ns
-        if _cached_model is not None and _cached_mtime == mtime:
-            return _cached_model
-        checkpoint = torch.load(WEIGHTS_PATH, map_location="cpu", weights_only=False)
-        if checkpoint.get("format") != "ron1-native-state-dict-v1":
-            _cached_error = "صيغة ملف أوزان النواة غير مدعومة."
-            return None
-        if checkpoint.get("trained") is not True or int(checkpoint.get("step", 0)) < 1:
-            _cached_error = "النواة الأصلية موجودة لكنها لم تُدرّب بعد؛ لن يتم استخدام نموذج بديل."
-            return None
-        config = checkpoint.get("config") or load_config()
-        model = Ron1Core(config)
-        model.load_state_dict(checkpoint["state_dict"], strict=True)
-        model.eval()
-        _cached_model = model
-        _cached_mtime = mtime
-        _cached_step = int(checkpoint.get("step", 0))
-        _cached_error = ""
-        return _cached_model
-    except Exception as exc:
-        _cached_error = "تعذر تحميل أوزان Ron-1 الأصلية: " + str(exc)
-        return None
+    """Load pretrained weights once; never report random or missing weights as ready."""
+    global _model, _tokenizer, _load_error
+    if _model is not None and _tokenizer is not None:
+        return _model, _tokenizer
+    with _load_lock:
+        if _model is not None and _tokenizer is not None:
+            return _model, _tokenizer
+        try:
+            tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, trust_remote_code=False)
+            model = AutoModelForCausalLM.from_pretrained(
+                MODEL_ID,
+                torch_dtype="auto",
+                low_cpu_mem_usage=True,
+                trust_remote_code=False,
+            )
+            model.eval()
+            _tokenizer, _model = tokenizer, model
+            _load_error = ""
+        except Exception as exc:
+            _load_error = (
+                "تعذر تحميل أوزان النموذج المسبق التدريب. تحقق من الذاكرة "
+                "واتصال الاستضافة ومستودع النموذج. " + str(exc)[:500]
+            )
+            raise RuntimeError(_load_error) from exc
+    return _model, _tokenizer
 
 
-def health_payload():
-    model = get_model()
-    return {
-        "model": MODEL_NAME,
-        "ready": model is not None,
-        "trained": model is not None,
-        "step": _cached_step,
-        "message": "النواة الأصلية جاهزة." if model is not None else _cached_error,
-    }
-
-
-def make_prompt(message, history):
-    parts = [
-        "أنت رون، مساعد عربي مستقل. أجب عن رسالة المستخدم بوضوح.\n"
-    ]
-    safe_history = history if isinstance(history, list) else []
-    for item in safe_history[-8:]:
+def sanitize_history(history, message):
+    """Bound and validate chat history before formatting it for the model."""
+    if not isinstance(history, list):
+        return []
+    safe = []
+    for item in history[-12:]:
         if not isinstance(item, dict):
             continue
         role, content = item.get("role"), item.get("content")
         if role not in ("user", "assistant") or not isinstance(content, str):
             continue
-        content = content[:2000]
-        parts.append(("المستخدم: " if role == "user" else "رون: ") + content + "\n")
-    if not safe_history or not any(isinstance(item, dict) and item.get("role") == "user" and item.get("content") == message for item in safe_history[-8:]):
-        parts.append("المستخدم: " + message[:2000] + "\n")
-    parts.append("رون: ")
-    return "".join(parts)
+        content = content.strip()
+        if content:
+            safe.append({"role": role, "content": content[:4000]})
+    if not safe or safe[-1]["role"] != "user" or safe[-1]["content"] != message:
+        safe.append({"role": "user", "content": message[:4000]})
+    return safe
+
+
+def build_inputs(tokenizer, message, history):
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages.extend(sanitize_history(history, message))
+    if getattr(tokenizer, "chat_template", None):
+        encoded = tokenizer.apply_chat_template(
+            messages,
+            tokenize=True,
+            add_generation_prompt=True,
+            return_tensors="pt",
+        )
+        if isinstance(encoded, dict):
+            input_ids = encoded["input_ids"]
+            attention_mask = encoded.get("attention_mask")
+        else:
+            input_ids, attention_mask = encoded, None
+    else:
+        lines = [SYSTEM_PROMPT]
+        for item in messages[1:]:
+            label = "المستخدم" if item["role"] == "user" else "رون"
+            lines.append(f"{label}: {item['content']}")
+        lines.append("رون:")
+        encoded = tokenizer(
+            "\n".join(lines),
+            return_tensors="pt",
+            truncation=True,
+            max_length=MAX_INPUT_TOKENS,
+        )
+        input_ids = encoded["input_ids"]
+        attention_mask = encoded.get("attention_mask")
+
+    if input_ids.shape[-1] > MAX_INPUT_TOKENS:
+        input_ids = input_ids[:, -MAX_INPUT_TOKENS:]
+        if attention_mask is not None:
+            attention_mask = attention_mask[:, -MAX_INPUT_TOKENS:]
+    return input_ids, attention_mask
+
+
+def health_payload():
+    try:
+        model, tokenizer = get_model()
+        return {
+            "model": MODEL_NAME,
+            "base_model": MODEL_ID,
+            "ready": model is not None and tokenizer is not None,
+            "trained": True,
+            "weights_source": "pretrained Hugging Face checkpoint",
+            "message": "تم تحميل أوزان SmolLM المحددة بنجاح.",
+        }
+    except Exception:
+        return {
+            "model": MODEL_NAME,
+            "base_model": MODEL_ID,
+            "ready": False,
+            "trained": False,
+            "weights_source": "pretrained Hugging Face checkpoint",
+            "message": _load_error or "لم يتم تحميل النموذج بعد.",
+        }
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "Ron1NativeCore/0.1"
+    server_version = "Ron1SmolLM/1.0"
 
     def _send(self, status, payload):
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        body = b"" if status == 204 else json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -98,14 +147,16 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Accept")
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
-        self.wfile.write(body)
+        if body:
+            self.wfile.write(body)
 
     def do_OPTIONS(self):
         self._send(204, {})
 
     def do_GET(self):
         if self.path.rstrip("/") in ("/health", "/api/health"):
-            self._send(200, health_payload())
+            payload = health_payload()
+            self._send(200 if payload["ready"] else 503, payload)
         else:
             self._send(404, {"model": MODEL_NAME, "error": "المسار غير موجود."})
 
@@ -114,39 +165,57 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, {"model": MODEL_NAME, "error": "المسار غير موجود."})
             return
         try:
-            length = int(self.headers.get("Content-Length", "0"))
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+            except (TypeError, ValueError):
+                length = 0
             if length <= 0 or length > MAX_BODY_BYTES:
                 self._send(413, {"model": MODEL_NAME, "error": "حجم الطلب غير صالح أو كبير."})
                 return
             data = json.loads(self.rfile.read(length).decode("utf-8"))
+            if not isinstance(data, dict):
+                self._send(400, {"model": MODEL_NAME, "error": "صيغة الطلب غير صالحة."})
+                return
             message = data.get("message", "")
-            history = data.get("history", [])
             if not isinstance(message, str) or not message.strip():
                 self._send(400, {"model": MODEL_NAME, "error": "اكتب رسالة أولًا."})
                 return
-            model = get_model()
-            if model is None:
-                self._send(503, {"model": MODEL_NAME, "error": _cached_error})
-                return
-            tokenizer = ByteTokenizer()
-            prompt_ids = tokenizer.encode(make_prompt(message.strip(), history), add_bos=True)
-            prompt_ids = prompt_ids[-model.config["max_seq_len"]:]
-            input_ids = torch.tensor([prompt_ids], dtype=torch.long)
-            with torch.inference_mode():
-                output_ids = model.generate(
-                    input_ids,
-                    max_new_tokens=max(1, min(MAX_NEW_TOKENS, 160)),
-                    temperature=0.7,
-                    top_k=40,
-                )
-            reply = tokenizer.decode(output_ids[0].tolist()[len(prompt_ids):]).strip()
+            message = message.strip()[:4000]
+            model, tokenizer = get_model()
+            input_ids, attention_mask = build_inputs(tokenizer, message, data.get("history", []))
+            input_ids = input_ids.to(next(model.parameters()).device)
+            if attention_mask is not None:
+                attention_mask = attention_mask.to(input_ids.device)
+            generation_args = {
+                "input_ids": input_ids,
+                "max_new_tokens": MAX_NEW_TOKENS,
+                "do_sample": True,
+                "temperature": max(0.1, min(float(os.environ.get("RON1_TEMPERATURE", "0.7")), 1.5)),
+                "top_p": max(0.1, min(float(os.environ.get("RON1_TOP_P", "0.9")), 1.0)),
+                "repetition_penalty": 1.08,
+                "pad_token_id": tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id,
+                "eos_token_id": tokenizer.eos_token_id,
+            }
+            if attention_mask is not None:
+                generation_args["attention_mask"] = attention_mask
+            with _generation_lock, torch.inference_mode():
+                output = model.generate(**generation_args)
+            generated = output[0, input_ids.shape[-1]:]
+            reply = tokenizer.decode(generated, skip_special_tokens=True).strip()
             if not reply:
-                reply = "لم تنتج النواة نصًا واضحًا في هذه المحاولة."
-            self._send(200, {"model": MODEL_NAME, "reply": reply, "step": _cached_step})
-        except (ValueError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+                reply = "لم ينتج النموذج ردًا واضحًا هذه المرة. أعد صياغة السؤال من فضلك."
+            self._send(200, {
+                "model": MODEL_NAME,
+                "base_model": MODEL_ID,
+                "reply": reply,
+                "weights_source": "pretrained Hugging Face checkpoint",
+            })
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             self._send(400, {"model": MODEL_NAME, "error": "تعذر قراءة الطلب: " + str(exc)})
+        except RuntimeError as exc:
+            self._send(503, {"model": MODEL_NAME, "error": str(exc)[:700]})
         except Exception:
-            self._send(500, {"model": MODEL_NAME, "error": "حدث خطأ داخلي أثناء تشغيل النواة الأصلية."})
+            self._send(500, {"model": MODEL_NAME, "error": "حدث خطأ داخلي أثناء توليد الرد."})
 
     def log_message(self, fmt, *args):
         print("%s - %s" % (self.address_string(), fmt % args), flush=True)
@@ -155,6 +224,6 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8080"))
     host = os.environ.get("HOST", "0.0.0.0")
-    print("Starting Ron-1 Native Core API on %s:%s" % (host, port), flush=True)
-    print("Weights path: %s" % WEIGHTS_PATH, flush=True)
+    print(f"Starting Ron-1 SmolLM API on {host}:{port}", flush=True)
+    print(f"Pretrained model: {MODEL_ID}", flush=True)
     ThreadingHTTPServer((host, port), Handler).serve_forever()
