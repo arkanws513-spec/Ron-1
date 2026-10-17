@@ -1,4 +1,5 @@
 import json
+import hmac
 import os
 import urllib.error
 import urllib.request
@@ -21,7 +22,7 @@ class handler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", ORIGIN)
         self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Accept")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Ron1-Client-Key")
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
@@ -31,6 +32,11 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         token = os.environ.get("HF_TOKEN", "").strip()
+        expected_key = os.environ.get("RON1_API_KEY", "").strip()
+        provided_key = self.headers.get("X-Ron1-Client-Key", "")
+        if not expected_key or not hmac.compare_digest(expected_key, provided_key):
+            self.send_json(401, {"model": "Ron-1 SmolLM", "error": "مفتاح العميل غير صحيح أو غير مضبوط."})
+            return
         if not token:
             self.send_json(503, {"model": "Ron-1 SmolLM", "error": "الخدمة غير مهيأة: أضف HF_TOKEN إلى إعدادات Vercel."})
             return
