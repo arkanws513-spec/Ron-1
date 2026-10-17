@@ -5,13 +5,14 @@ This repository contains lightweight Vercel Python functions that proxy chat req
 ## Required setup
 
 1. In Hugging Face token settings, create a fine-grained token with **Make calls to Inference Providers** permission.
-2. In the Vercel project connected to this repository, add the environment variable `HF_TOKEN` for Production (and Preview if needed). Never commit the token to GitHub or paste it into the website.
-3. Redeploy the Vercel project after setting the variable.
-4. Open `https://<your-vercel-domain>/health`. It should return JSON with `"model":"Ron-1 SmolLM"` and `"ready":true`.
-5. In the Ron-1 GitHub Pages interface, open **إعداد اتصال النواة**, enter the Vercel domain, and test a real Arabic prompt.
+2. In the Vercel project connected to this repository, add `HF_TOKEN` and `RON1_API_KEY` as Production environment variables. `RON1_API_KEY` should be a long random secret that you also enter in the interface. Never commit either secret to GitHub or paste the Hugging Face token into the website.
+3. Redeploy the Vercel project after setting both variables.
+4. Open `https://<your-vercel-domain>/health` only through the Ron-1 interface, which sends the client key. The endpoint rejects requests without the key.
+5. In the Ron-1 GitHub Pages interface, open **إعداد اتصال النواة**, enter the Vercel domain and the client key, then test a real Arabic prompt.
 
 ## Optional environment variables
 
+- `RON1_API_KEY`: required shared client secret; use a long random value, set it only in Vercel, and enter the same value in the interface. The API rejects requests without it.
 - `RON1_MODEL_ID`: defaults to `HuggingFaceTB/SmolLM3-3B`.
 - `RON1_ALLOWED_ORIGIN`: defaults to `https://arkanws513-spec.github.io`.
 - `RON1_MAX_NEW_TOKENS`: defaults to 256, maximum 512.
