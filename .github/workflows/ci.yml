@@ -18,6 +18,7 @@ jobs:
       - name: Check interface and service-worker syntax
         run: |
           node --check sw.js
+          node --check scripts/check-runtime.mjs
           python - <<'PY'
           from pathlib import Path
           html = Path("index.html").read_text(encoding="utf-8")
