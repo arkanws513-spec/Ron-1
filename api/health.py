@@ -1,4 +1,5 @@
 import os
+import hmac
 from http.server import BaseHTTPRequestHandler
 import json
 
@@ -14,7 +15,7 @@ class handler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", ORIGIN)
         self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Accept")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Ron1-Client-Key")
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
@@ -23,7 +24,11 @@ class handler(BaseHTTPRequestHandler):
         self.send_json(200, {"ok": True})
 
     def do_GET(self):
-        configured = bool(os.environ.get("HF_TOKEN", "").strip())
+        token_configured = bool(os.environ.get("HF_TOKEN", "").strip())
+        expected_key = os.environ.get("RON1_API_KEY", "").strip()
+        provided_key = self.headers.get("X-Ron1-Client-Key", "")
+        key_ok = bool(expected_key) and hmac.compare_digest(expected_key, provided_key)
+        configured = token_configured and key_ok
         self.send_json(200 if configured else 503, {
             "model": "Ron-1 SmolLM",
             "base_model": MODEL_ID,
