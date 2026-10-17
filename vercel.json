@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/health", "destination": "/api/health" }
+  ],
+  "functions": {
+    "api/chat.py": { "maxDuration": 60 },
+    "api/health.py": { "maxDuration": 10 }
+  }
+}
